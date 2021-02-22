@@ -1,0 +1,28 @@
+{
+  "channel":
+  [
+    {
+      "general":
+      {
+        "description": "MQ Non Persistent channel details"
+      },
+      "name": "GSQMGRCHL",
+      "clientConnection":
+      {
+        "connection":
+        [
+          {
+            "host": "gsmq-ibm-mq-qm-cp4i.apps.callumj.icp4i.com",
+            "port": 443
+          }
+        ],
+        "queueManager": "gsmq"
+      },
+      "transmissionSecurity":
+      {
+        "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+      },
+	  "type": "clientConnection"
+    }
+  ]
+}
