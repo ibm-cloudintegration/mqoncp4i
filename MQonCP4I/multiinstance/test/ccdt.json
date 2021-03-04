@@ -1,0 +1,28 @@
+{
+  "channel":
+  [
+    {
+      "general":
+      {
+        "description": "MQ Persistent channel details"
+      },
+      "name": "MQ00CHL",
+      "clientConnection":
+      {
+        "connection":
+        [
+          {
+            "host": "mq00mi-ibm-mq-qm-cp4i-mq.apps.kylo.coc-ibm.com",
+            "port": 443
+          }
+        ],
+        "queueManager": "mq00mi"
+      },
+      "transmissionSecurity":
+      {
+        "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+      },
+	"type": "clientConnection"
+    }
+  ]
+}

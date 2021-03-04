@@ -1,0 +1,28 @@
+{
+  "channel":
+  [
+    {
+      "general":
+      {
+        "description": "MQ Non Persistent channel details"
+      },
+      "name": "MQ00CHL",
+      "clientConnection":
+      {
+        "connection":
+        [
+          {
+            "host": "dteroks-1000006dxs-z08br-8946bbc006b7c6eb0829d088919818bb-0000.us-east.containers.appdomain.cloud",
+            "port": 443
+          }
+        ],
+        "queueManager": "00qmmi"
+      },
+      "transmissionSecurity":
+      {
+        "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+      },
+	  "type": "clientConnection"
+    }
+  ]
+}
