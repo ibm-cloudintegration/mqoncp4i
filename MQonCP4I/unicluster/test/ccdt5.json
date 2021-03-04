@@ -1,0 +1,197 @@
+{
+    "channel": 
+    [
+        {
+            "name": "MQ00CHLA",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00a-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "*ANY_QM"
+            },
+            "connectionManagement":
+            {
+              "clientWeight": 1,
+              "affinity": "none"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ECDHE_RSA_AES_128_CBC_SHA256"
+            },
+            "type": "clientConnection"
+        },
+        {
+            "name": "MQ00CHLB",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00b-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "*ANY_QM"
+            },
+            "connectionManagement":
+            {
+              "clientWeight": 1,
+              "affinity": "none"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ECDHE_RSA_AES_128_CBC_SHA256"
+            },
+            "type": "clientConnection"
+        },
+        {
+            "name": "MQ00CHLC",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00c-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "*ANY_QM"
+            },
+            "connectionManagement":
+            {
+              "clientWeight": 1,
+              "affinity": "none"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ECDHE_RSA_AES_128_CBC_SHA256"
+            },
+            "type": "clientConnection"
+        },
+        {
+            "name": "MQ00CHLD",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00d-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "*ANY_QM"
+            },
+            "connectionManagement":
+            {
+              "clientWeight": 1,
+              "affinity": "none"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ECDHE_RSA_AES_128_CBC_SHA256"
+            },
+            "type": "clientConnection"
+        },
+        {
+            "name": "MQ00CHLA",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00a-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "mq00a"
+            },
+            "connectionManagement":
+            {
+              "clientWeight": 1,
+              "affinity": "none"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ECDHE_RSA_AES_128_CBC_SHA256"
+            },
+            "type": "clientConnection"
+        },
+        {
+            "name": "MQ00CHLB",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00b-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "mq00b"
+            },
+            "connectionManagement":
+            {
+              "clientWeight": 1,
+              "affinity": "none"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ECDHE_RSA_AES_128_CBC_SHA256"
+            },
+            "type": "clientConnection"
+        },
+        {
+            "name": "MQ00CHLC",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00c-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "mq00c"
+            },
+            "connectionManagement":
+            {
+              "clientWeight": 1,
+              "affinity": "none"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ECDHE_RSA_AES_128_CBC_SHA256"
+            },
+            "type": "clientConnection"
+        },
+        {
+            "name": "MQ00CHLD",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00d-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "mq00d"
+            },
+            "connectionManagement":
+            {
+              "clientWeight": 1,
+              "affinity": "none"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ECDHE_RSA_AES_128_CBC_SHA256"
+            },
+            "type": "clientConnection"
+        }   
+   ]
+}

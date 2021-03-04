@@ -1,0 +1,62 @@
+{
+    "channel": 
+    [
+        {
+            "name": "MQ00CHLA",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00a-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "mq00a"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+            },
+            "type": "clientConnection"
+        },
+        {
+            "name": "MQ00CHLB",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00b-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "mq00b"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+            },
+            "type": "clientConnection"
+        },
+        {
+            "name": "MQ00CHLC",
+            "clientConnection": 
+            {
+                "connection": 
+                [
+                    {
+                        "host": "mq00c-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "port": 443
+                    }
+                ],
+                "queueManager": "mq00c"
+            },
+            "transmissionSecurity":
+            {
+              "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+            },
+            "type": "clientConnection"
+        }   
+   ]
+}
