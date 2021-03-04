@@ -1,0 +1,103 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: $QMnamed-uniform-cluster-mqsc-1
+  namespace: $TARGET_NAMESPACE
+data:
+  disablesecurity.mqsc: |-
+    *##########################################################################
+    * Configuration for all queue managers
+    *##########################################################################
+    define QL(APPQ) cluster($UNICLUS) defbind(notfixed) clwluseq(any) maxdepth(99999999) replace
+    define QL(APPQ2) cluster($UNICLUS) defbind(notfixed) clwluseq(any) maxdepth(99999999) replace
+    define channel($TOCLUSd) chltype(clusrcvr) trptype(tcp) conname('$CONNAMEd(1414)') cluster($UNICLUS) replace
+    define channel($TOCLUSb) chltype(CLUSSDR) trptype(tcp) conname('$CONNAMEb(1414)') cluster($UNICLUS) replace
+    define channel($TOCLUSa) chltype(CLUSSDR) trptype(tcp) conname('$CONNAMEa(1414)') cluster($UNICLUS) replace
+    define channel($TOCLUSc) chltype(CLUSSDR) trptype(tcp) conname('$CONNAMEc(1414)') cluster($UNICLUS) replace
+    DEFINE CHANNEL($CHANNELd) CHLTYPE(SVRCONN) TRPTYPE(TCP) SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER') replace
+    DEFINE CHANNEL(TO_$UNICLUS) CHLTYPE(SVRCONN) TRPTYPE(TCP) SSLCAUTH(OPTIONAL) SSLCIPH('ANY_TLS12_OR_HIGHER') replace
+    ALTER QMGR CHLAUTH(DISABLED)
+    ALTER AUTHINFO('SYSTEM.DEFAULT.AUTHINFO.IDPWOS') AUTHTYPE(IDPWOS) ADOPTCTX(YES) CHCKCLNT(OPTIONAL) CHCKLOCL(OPTIONAL) AUTHENMD(OS)
+    REFRESH SECURITY TYPE(CONNAUTH)
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: $QMnamed-uniform-cluster-ini-1
+  namespace: $TARGET_NAMESPACE
+data:
+  uniformcluster.ini: |-
+    TuningParameters:
+       UniformClusterName=$UNICLUS
+---
+apiVersion: mq.ibm.com/v1beta1
+kind: QueueManager
+metadata:
+  name: $QMnamed
+spec:
+  version: 9.2.0.0-r2
+  license:
+    accept: true
+    license: L-RJON-BN7PN3
+    use: "NonProduction"
+  pki:
+    keys:
+    - name: default
+      secret:
+        secretName: $QMpre-uniform-cluster-cert
+        items:
+          - tls.key
+          - tls.crt
+  web:
+    enabled: true
+  securityContext:
+    supplementalGroups: [99]
+  queueManager:
+    availability:
+      type: SingleInstance
+    storage:
+      persistedData:
+        enabled: true
+        class: $SC
+      queueManager:
+        enabled: true
+        class: $SC
+      recoveryLogs:
+        enabled: true
+        class: $SC
+    securityContext:
+      supplementalGroups: [99]
+    mqsc:
+      - configMap:
+          name: $QMnamed-uniform-cluster-mqsc-1
+          items:
+            - disablesecurity.mqsc
+    ini:
+      - configMap:
+          name: $QMnamed-uniform-cluster-ini-1
+          items:
+            - uniformcluster.ini
+  template:
+    pod:
+      containers:
+        - env:
+            - name: MQSNOAUT
+              value: 'yes'
+          name: qmgr
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: mq-traffic-mq-$QMnamed-ibm-mq-qm
+  namespace: $TARGET_NAMESPACE
+spec:
+  host: $CHANNELd.chl.mq.ibm.com
+  to:
+    kind: Service
+    name: $SERVICEd
+  port:
+    targetPort: 1414
+  tls:
+    termination: passthrough
+  wildcardPolicy: None
+---
