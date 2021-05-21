@@ -25,7 +25,7 @@ kind: QueueManager
 metadata:
   name: $QMpre-multiinstancemq
 spec:
-  version: 9.2.0.0-r2
+  version: $VERSION
   license:
     accept: true
     license: L-RJON-BN7PN3
