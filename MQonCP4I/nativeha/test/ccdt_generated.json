@@ -1,0 +1,28 @@
+{
+  "channel":
+  [
+    {
+      "general":
+      {
+        "description": "MQ channel details"
+      },
+      "name": "MQEXTERNALCHL",
+      "clientConnection":
+      {
+        "connection":
+        [
+          {
+            "host": "nativeha-ibm-mq-qm-MQ00.icp4ijc-f759d6bacb067a9de325a02b179d9665-0000.us-south.containers.appdomain.cloud",
+            "port": 443
+          }
+        ],
+        "queueManager": "nativeha"
+      },
+      "transmissionSecurity":
+      {
+        "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+      },
+	  "type": "clientConnection"
+    }
+  ]
+}

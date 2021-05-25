@@ -1,0 +1,28 @@
+{
+  "channel":
+  [
+    {
+      "general":
+      {
+        "description": "MQ channel details"
+      },
+      "name": "MQEXTERNALCHL",
+      "clientConnection":
+      {
+        "connection":
+        [
+          {
+            "host": "nativeha-ibm-mq-qm-$QMpre.$ROOTURL",
+            "port": 443
+          }
+        ],
+        "queueManager": "nativeha"
+      },
+      "transmissionSecurity":
+      {
+        "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+      },
+	  "type": "clientConnection"
+    }
+  ]
+}
