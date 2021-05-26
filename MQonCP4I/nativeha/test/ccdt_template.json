@@ -12,7 +12,7 @@
         "connection":
         [
           {
-            "host": "nativeha-ibm-mq-qm-$QMpre.$ROOTURL",
+            "host": "nativeha-ibm-mq-qm-$TARGET_NAMESPACE.$ROOTURL",
             "port": 443
           }
         ],
