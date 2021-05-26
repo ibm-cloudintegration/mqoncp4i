@@ -5,6 +5,7 @@ export MQCCDTURL="${DIR}/ccdt_generated.json"
 export MQSSLKEYR="${DIR}/key"
 export MQCHLLIB="${DIR}"
 export MQCHLTAB="${DIR}/ccdt_generated.json"
+export TARGET_NAMESPACE=cp4i-mq
 export QMpre=mq00
 export QMname=nativeha
 export APPQ=APPQ
