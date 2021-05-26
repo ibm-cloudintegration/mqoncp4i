@@ -13,6 +13,6 @@ export ROOTURL="$(oc get IngressController default -n openshift-ingress-operator
 ( echo "cat <<EOF" ; cat ccdt_template.json ; echo EOF ) | sh > ccdt_generated.json
 
 for (( i=0; i<$1; ++i)); do
-  echo "Starting amqsphac" nativeha
-  /opt/mqm/samp/bin/amqsphac APPQ nativeha &
+  echo "Starting amqsphac" $QMname
+  /opt/mqm/samp/bin/amqsphac $APPQ $QMname &
 done
