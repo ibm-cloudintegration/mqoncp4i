@@ -1,7 +1,7 @@
 #! /bin/bash
 
 #export TARGET_NAMESPACE=cp4i-mq
-export TARGET_NAMESPACE=mq00
+export TARGET_NAMESPACE=cp4i-mq
 
 oc delete queuemanager nativeha -n $TARGET_NAMESPACE
 oc delete secret nativehacert -n $TARGET_NAMESPACE

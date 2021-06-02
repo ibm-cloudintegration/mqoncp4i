@@ -5,7 +5,7 @@ export MQCCDTURL="${DIR}/ccdt_generated.json"
 export MQSSLKEYR="${DIR}/key"
 export MQCHLLIB="${DIR}"
 export MQCHLTAB="${DIR}/ccdt_generated.json"
-export QMpre=MQ00
+export QMpre=mq00
 export QMname=nativeha
 export APPQ=APPQ
 export ROOTURL="$(oc get IngressController default -n openshift-ingress-operator -o jsonpath='{.status.domain}')"

@@ -1,7 +1,7 @@
 #! /bin/bash
 
 #export TARGET_NAMESPACE=cp4i-mq
-export TARGET_NAMESPACE=mq00
+export TARGET_NAMESPACE=cp4i-mq
 export VERSION=9.2.2.0-r1
 export SC=ibmc-file-gold-gid
 #export SC=managed-nfs-storage

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export QMpre=MQ00
+export QMpre=mq00
 export QMname=mq00a
 export APPQ=APPQ
 export MQCHLLIB='/home/student/MQonCP4I/unicluster/test'

@@ -49,7 +49,7 @@ kind: QueueManager
 metadata:
   name: $QMnamea
 spec:
-  version: 9.2.0.0-r2
+  version: $VERSION
   license:
     accept: true
     license: L-RJON-BN7PN3
@@ -156,7 +156,7 @@ kind: QueueManager
 metadata:
   name: $QMnameb
 spec:
-  version: 9.2.0.0-r2
+  version: $VERSION
   license:
     accept: true
     license: L-RJON-BN7PN3
@@ -187,7 +187,7 @@ spec:
         enabled: true
         class: $SC
     securityContext:
-      supplementalGroups: [99]  
+      supplementalGroups: [99]
     mqsc:
       - configMap:
           name: $QMnameb-uniform-cluster-mqsc-2
@@ -258,7 +258,7 @@ kind: QueueManager
 metadata:
   name: $QMnamec
 spec:
-  version: 9.2.0.0-r2
+  version: $VERSION
   license:
     accept: true
     license: L-RJON-BN7PN3
