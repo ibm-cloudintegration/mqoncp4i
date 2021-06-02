@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export QMpre=MQ00
-export QMname=mq00c
+export QMname=mq00a
 export APPQ=APPQ
 export MQCHLLIB='/home/student/MQonCP4I/unicluster/test'
 export MQCHLTAB='/home/student/MQonCP4I/unicluster/test/ccdt.json'
