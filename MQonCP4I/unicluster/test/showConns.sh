@@ -5,14 +5,14 @@ green='\033[0;32m'
 lgreen='\033[1;32m'
 nc='\033[0m'
 
-export QMpre=MQ00
+export QMpre=mq00
 export QMname=mq00a
 export APPQ=APPQ
-export MQCHLLIB='/home/ibmuser/MQonCP4I/unicluster/test'
-export MQCHLTAB='/home/ibmuser/MQonCP4I/unicluster/test/ccdt5.json'
+export MQCHLLIB='/home/student/MQonCP4I/unicluster/test'
+export MQCHLTAB='/home/student/MQonCP4I/unicluster/test/ccdt5.json'
 export MQAPPLNAME='MY.GETTER.APP'
-export MQCCDTURL='/home/ibmuser/MQonCP4I/unicluster/test/ccdt5.json'
-export MQSSLKEYR='/home/ibmuser/MQonCP4I/unicluster/test/key'
+export MQCCDTURL='/home/student/MQonCP4I/unicluster/test/ccdt5.json'
+export MQSSLKEYR='/home/student/MQonCP4I/unicluster/test/key'
 
 
 APPNAME=${2:-amqsghac}
