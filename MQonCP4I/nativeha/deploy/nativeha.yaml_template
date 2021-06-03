@@ -43,6 +43,7 @@ spec:
   web:
     enabled: true
   queueManager:
+    name: $QMname
     mqsc:
       - configMap:
           name: nativehamqsc
