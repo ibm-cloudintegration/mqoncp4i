@@ -49,8 +49,8 @@ oc delete pvc $QMnamec-ibm-mq-persisted-data -n $TARGET_NAMESPACE
 oc delete pvc $QMnamec-ibm-mq-recovery-logs -n $TARGET_NAMESPACE
 oc delete queuemanager $QMnamed -n $TARGET_NAMESPACE
 oc delete route mq-traffic-mq-$QMnamed-ibm-mq-qm -n $TARGET_NAMESPACE
-oc delete configmap $QMnamed-uniform-cluster-mqsc-3 -n $TARGET_NAMESPACE
-oc delete configmap $QMnamed-uniform-cluster-ini-3 -n $TARGET_NAMESPACE
+oc delete configmap $QMnamed-uniform-cluster-mqsc-4 -n $TARGET_NAMESPACE
+oc delete configmap $QMnamed-uniform-cluster-ini-4 -n $TARGET_NAMESPACE
 oc delete pvc data-$QMnamed-ibm-mq-0 -n $TARGET_NAMESPACE
 oc delete pvc $QMnamed-ibm-mq-persisted-data -n $TARGET_NAMESPACE
 oc delete pvc $QMnamed-ibm-mq-recovery-logs -n $TARGET_NAMESPACE
