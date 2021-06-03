@@ -1,5 +1,6 @@
 #! /bin/bash
 
+#mq00 reserved for instructor
 #export TARGET_NAMESPACE=cp4i-mq
 export TARGET_NAMESPACE=cp4i-mq
 
