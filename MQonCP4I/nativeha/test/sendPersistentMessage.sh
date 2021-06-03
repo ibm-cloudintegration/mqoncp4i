@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#mq00 reserved for instructor
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 export MQCCDTURL="${DIR}/ccdt_generated.json"
 export MQSSLKEYR="${DIR}/key"
@@ -7,7 +8,7 @@ export MQCHLLIB="${DIR}"
 export MQCHLTAB="${DIR}/ccdt_generated.json"
 export TARGET_NAMESPACE=cp4i-mq
 export QMpre=mq00
-export QMname=nativeha
+export QMname=mq00ha
 export APPQ=APPQ1
 
 export ROOTURL="$(oc get IngressController default -n openshift-ingress-operator -o jsonpath='{.status.domain}')"
