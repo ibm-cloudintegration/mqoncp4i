@@ -1,7 +1,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: $QMnamed-uniform-cluster-mqsc-1
+  name: $QMnamed-uniform-cluster-mqsc-4
   namespace: $TARGET_NAMESPACE
 data:
   disablesecurity.mqsc: |-
@@ -23,7 +23,7 @@ data:
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: $QMnamed-uniform-cluster-ini-1
+  name: $QMnamed-uniform-cluster-ini-4
   namespace: $TARGET_NAMESPACE
 data:
   uniformcluster.ini: |-
@@ -69,12 +69,12 @@ spec:
       supplementalGroups: [99]
     mqsc:
       - configMap:
-          name: $QMnamed-uniform-cluster-mqsc-1
+          name: $QMnamed-uniform-cluster-mqsc-4
           items:
             - disablesecurity.mqsc
     ini:
       - configMap:
-          name: $QMnamed-uniform-cluster-ini-1
+          name: $QMnamed-uniform-cluster-ini-4
           items:
             - uniformcluster.ini
   template:
