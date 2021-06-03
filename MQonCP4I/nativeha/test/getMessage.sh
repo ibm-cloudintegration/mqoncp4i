@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#mq00 reserved for instructor
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 export MQCCDTURL="${DIR}/ccdt_generated.json"
 export MQSSLKEYR="${DIR}/key"
