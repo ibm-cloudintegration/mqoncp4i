@@ -12,11 +12,11 @@
         "connection":
         [
           {
-            "host": "nativeha-ibm-mq-qm-$TARGET_NAMESPACE.$ROOTURL",
+            "host": "mq00ha-ibm-mq-qm-$TARGET_NAMESPACE.$ROOTURL",
             "port": 443
           }
         ],
-        "queueManager": "nativeha"
+        "queueManager": "mq00ha"
       },
       "transmissionSecurity":
       {
