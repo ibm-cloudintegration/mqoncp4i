@@ -24,7 +24,7 @@ type: Opaque
 apiVersion: mq.ibm.com/v1beta1
 kind: QueueManager
 metadata:
-  name: nativeha
+  name: $QMname
   namespace: $TARGET_NAMESPACE
 spec:
   version: $VERSION
