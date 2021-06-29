@@ -3,7 +3,7 @@
 #mq00 reserved for instructor
 #export TARGET_NAMESPACE=cp4i-mq
 export TARGET_NAMESPACE=cp4i	
-export QMname=mq22ha
+export QMname=mq00ha
 
 oc delete queuemanager $QMname -n $TARGET_NAMESPACE
 oc delete secret nativehacert -n $TARGET_NAMESPACE
