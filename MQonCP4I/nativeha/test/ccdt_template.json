@@ -1,0 +1,28 @@
+{
+  "channel":
+  [
+    {
+      "general":
+      {
+        "description": "MQ channel details"
+      },
+      "name": "$CHLCAPS",
+      "clientConnection":
+      {
+        "connection":
+        [
+          {
+            "host": "mq00ha-ibm-mq-qm-$TARGET_NAMESPACE.$ROOTURL",
+            "port": 443
+          }
+        ],
+        "queueManager": "mq00ha"
+      },
+      "transmissionSecurity":
+      {
+        "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+      },
+	  "type": "clientConnection"
+    }
+  ]
+}
