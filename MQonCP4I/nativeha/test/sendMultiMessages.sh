@@ -12,7 +12,7 @@ export QMname=mq00ha
 export CHLCAPS=MQ00HACHL
 export APPQ=APPQ
 
-export ROOTURL="$(oc get IngressController default -n openshift-ingress-operator -o jsonpath='{.status.domain}')"
+export HOST="$(oc get route $QMname-ibm-mq-qm -n $TARGET_NAMESPACE -o jsonpath='{.spec.host}')"
 ( echo "cat <<EOF" ; cat ccdt_template.json ; echo EOF ) | sh > ccdt_generated.json
 
 for (( i=0; i<$1; ++i)); do
