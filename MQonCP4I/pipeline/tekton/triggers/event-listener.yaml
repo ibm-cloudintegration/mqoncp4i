@@ -1,0 +1,16 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: el-cicd-mq
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: cicd-trigger
+      template:
+        name: mq-trigger-template
+      # interceptors:
+      #  - cel:
+      #       filter: "header.match('X-GitHub-Event', 'push') && (body.ref == 'refs/heads/master' || body.ref == 'refs/heads/2020.2')"
+
+# body.ref == 'refs/heads/master' is referring to the branch of your repo. IF you want to use a different branch, change it accordingly. For ex: 'refs/heads/mq/282'
+# if I want to allow to only run a pipeline based on a specific user's commit. I would need to add this filter:    "header.match('X-GitHub-Event', 'push') && body.ref == 'refs/heads/master' && body.pusher.email == 'mirza.baig@ibm.com'"
