@@ -1,0 +1,48 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: mq-pipeline
+spec:
+  params:
+    - name: MQ_WORKSPACE_DIR
+      type: string
+      default: mq/basic/
+    - name: QM_NAME
+      type: string
+      default: mqxxpl
+    - name: QM_POD_NAME
+      type: string
+      default: mqxxpl
+    - name: TARGET_NAMESPACE
+      type: string
+      default: cp4i-mq
+    - name: MQ_CERT_SECRET
+      type: string
+      default: mqcert-secret
+    - name: MQ_PVC_SC
+      type: string
+      default: ibmc-file-gold-gid
+  resources:
+    - name: source
+      type: git
+  tasks:
+    - name: deploy-qm
+      taskRef:
+        name: deploy-qm
+      params:
+        - name: QM_NAME
+          value: $(params.QM_NAME)
+        - name: QM_POD_NAME
+          value: $(params.QM_POD_NAME)
+        - name: TARGET_NAMESPACE
+          value: $(params.TARGET_NAMESPACE)
+        - name: MQ_WORKSPACE_DIR
+          value: $(params.MQ_WORKSPACE_DIR)
+        - name: MQ_CERT_SECRET
+          value: $(params.MQ_CERT_SECRET)
+        - name: MQ_PVC_SC
+          value: $(params.MQ_PVC_SC)          
+      resources:
+        inputs:
+          - name: source
+            resource: source
