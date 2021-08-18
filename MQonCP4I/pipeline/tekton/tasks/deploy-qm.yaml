@@ -1,0 +1,63 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: deploy-qm
+spec:
+  params:
+    - name: QM_NAME
+      type: string
+    - name: QM_POD_NAME
+      type: string
+    - name: TARGET_NAMESPACE
+      type: string
+    - name: MQ_WORKSPACE_DIR
+      description: Location containing MQ configurations
+      type: string
+    - name: MQ_CERT_SECRET
+      description: Secret to supply to the QueueManager deplyoment
+    - name: MQ_PVC_SC
+      type: string
+  resources:
+    inputs:
+      - name: source
+        type: git
+  steps:
+    - name: create-cm-apply-params-to-qm
+      image: popcor255/kubectl
+      workingDir: /workspace/source/$(params.MQ_WORKSPACE_DIR)
+      env:
+        - name: QM_NAME
+          value: $(params.QM_NAME)
+        - name: QM_POD_NAME
+          value: $(params.QM_POD_NAME) 
+        - name: TARGET_NAMESPACE
+          value: $(params.TARGET_NAMESPACE)
+        - name: MQ_CERT_SECRET
+          value: $(params.MQ_CERT_SECRET)
+        - name: MQ_PVC_SC
+          value: $(params.MQ_PVC_SC)
+      script: |
+          set -e
+          # Grab the Git commit tag
+          TAG="$(cat ../../.git/FETCH_HEAD | awk '{print substr($1,0,7)}')"
+          # Save it as an environment variable to create the configmap and use later in template
+          export MQSC_CM_NAME=cm-$TAG
+          # Create the config map from the supplied file in workingDir
+          kubectl create configmap $MQSC_CM_NAME --namespace $(params.TARGET_NAMESPACE) --from-file=config.mqsc || true
+          
+          export SVRCONN_SNI=$(echo "${QM_NAME}" | tr '[:upper:]' '[:lower:]')2e-conn.chl.mq.ibm.com
+          export SVRCONN_NAME=$(echo "${QM_NAME}" | tr '[:lower:]' '[:upper:]').CONN # in upper case
+          export ROUTE_NAME="${QM_POD_NAME}-conn-traffic"
+          # Stub environment variables in qm_template
+          envsubst < qm_template.yaml > qm_out.yaml
+          # Apply the QueueManager crd
+          cat qm_out.yaml
+          kubectl apply -f qm_out.yaml --wait=true
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+  volumes:
+    - emptyDir: {}
+      name: varlibcontainers
