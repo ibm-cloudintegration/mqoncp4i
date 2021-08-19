@@ -51,6 +51,16 @@ spec:
             - nativehamqsc.mqsc
     availability:
       type: NativeHA
+    storage:
+      persistedData:
+        enabled: true
+        class: $SC
+      queueManager:
+        enabled: true
+        class: $SC
+      recoveryLogs:
+        enabled: true
+        class: $SC
   template:
     pod:
       containers:
