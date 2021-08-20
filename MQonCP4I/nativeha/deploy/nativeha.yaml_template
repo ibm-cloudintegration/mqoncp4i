@@ -42,6 +42,8 @@ spec:
           - tls.crt
   web:
     enabled: true
+  securityContext:
+     supplementalGroups: [99]
   queueManager:
     name: $QMname
     mqsc:
