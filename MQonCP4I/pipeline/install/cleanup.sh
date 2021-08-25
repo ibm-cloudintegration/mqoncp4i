@@ -1,9 +1,8 @@
 #! /bin/bash
 
 #mq00 reserved for instructor
-export TARGET_NAMESPACE=chopper14
-#export TARGET_NAMESPACE=wedge4	
-export QMname=mq64pl
+export TARGET_NAMESPACE=cp4i-mq	
+export QMname=mq00pl
 export LABEL="tekton.dev/task=deploy-qm"
 
 oc delete queuemanager $QMname -n $TARGET_NAMESPACE
