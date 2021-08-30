@@ -5,7 +5,7 @@ metadata:
 spec:
   params:
     - name: url
-      value: 'https://github.com/jackcarnes/cp4i-mq-tekton'
+      value: 'https://github.com/<your github account>/cp4i-mq-tekton'
     - name: revision
       value: "master"
   type: git
