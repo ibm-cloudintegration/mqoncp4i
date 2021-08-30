@@ -9,13 +9,13 @@ spec:
       default: mq/basic/
     - name: QM_NAME
       type: string
-      default: mqxxpl
+      default: mqxxpl     #<replace xx with your number>
     - name: QM_POD_NAME
       type: string
-      default: mqxxpl
+      default: mqxxpl     #<replace xx with your number>
     - name: TARGET_NAMESPACE
       type: string
-      default: cp4i-mq
+      default: <insert your namespace here>
     - name: MQ_CERT_SECRET
       type: string
       default: mqcert-secret
