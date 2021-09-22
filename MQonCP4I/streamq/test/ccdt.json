@@ -1,0 +1,28 @@
+{
+  "channel":
+  [
+    {
+      "general":
+      {
+        "description": "MQ Non Persistent channel details"
+      },
+      "name": "MQ00STRMCHL",
+      "clientConnection":
+      {
+        "connection":
+        [
+          {
+            "host": "mq00strm-ibm-mq-qm-cp4i-mq.icp4ifb-f759d6bacb067a9de325a02b179d9665-0000.us-south.containers.appdomain.cloud",
+            "port": 443
+          }
+        ],
+        "queueManager": "mq00strm"
+      },
+      "transmissionSecurity":
+      {
+        "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+      },
+	  "type": "clientConnection"
+    }
+  ]
+}
