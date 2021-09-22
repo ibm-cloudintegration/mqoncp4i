@@ -1,0 +1,28 @@
+{
+  "channel":
+  [
+    {
+      "general":
+      {
+        "description": "MQ channel details"
+      },
+      "name": "$CHLCAPS",
+      "clientConnection":
+      {
+        "connection":
+        [
+          {
+            "host": "HOST",
+            "port": 443
+          }
+        ],
+        "queueManager": "QMname"
+      },
+      "transmissionSecurity":
+      {
+        "cipherSpecification": "ANY_TLS12_OR_HIGHER"
+      },
+	  "type": "clientConnection"
+    }
+  ]
+}
