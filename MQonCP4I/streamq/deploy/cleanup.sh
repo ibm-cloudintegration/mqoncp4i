@@ -2,7 +2,7 @@
 
 #mq99 reserved for instructor
 export TARGET_NAMESPACE=cp4i-mq	
-export QMname=mq99strm
+export QMname=mq00strm
 
 oc delete queuemanager $QMname -n $TARGET_NAMESPACE
 oc delete secret streamqqmgrcert -n $TARGET_NAMESPACE
