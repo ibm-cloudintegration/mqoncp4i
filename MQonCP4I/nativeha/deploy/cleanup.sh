@@ -1,8 +1,7 @@
 #! /bin/bash
 
 #mq00 reserved for instructor
-#export TARGET_NAMESPACE=cp4i-mq
-export TARGET_NAMESPACE=cp4i	
+export TARGET_NAMESPACE=cp4i-mq
 export QMname=mq00ha
 
 oc delete queuemanager $QMname -n $TARGET_NAMESPACE
