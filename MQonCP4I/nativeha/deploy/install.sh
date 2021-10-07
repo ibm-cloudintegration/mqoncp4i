@@ -3,8 +3,8 @@
 #Use storage class ibmc-file-gold-gid when running on ROKS clusters
 #Use storage class managed-nfs-storage when running on CoC PoT clusters
 #mq00 reserved for instructor
-#export TARGET_NAMESPACE=mq00
-export TARGET_NAMESPACE=cp4i
+export TARGET_NAMESPACE=mq00
+export TARGET_NAMESPACE=cp4i-mq
 export QMname=mq00ha
 export CHANNEL=mq00hachl
 export CHLCAPS=MQ00HACHL
