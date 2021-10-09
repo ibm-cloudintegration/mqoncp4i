@@ -12,11 +12,11 @@
         "connection":
         [
           {
-            "host": "HOST",
+            "host": "$HOST",
             "port": 443
           }
         ],
-        "queueManager": "QMname"
+        "queueManager": "$QMname"
       },
       "transmissionSecurity":
       {
