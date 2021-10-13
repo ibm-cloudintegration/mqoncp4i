@@ -21,7 +21,7 @@ export TOCLUSc=TO_UNICLUS_mq00c
 export UNICLUS=UNICLUS00
 export SC=managed-nfs-storage
 #export SC=ibmc-file-gold-gid
-export VERSION=9.2.2.0-r1
+export VERSION=9.2.3.0-r1
 
 ( echo "cat <<EOF" ; cat unicluster.yaml_template ; echo EOF ) | sh > unicluster.yaml
 
