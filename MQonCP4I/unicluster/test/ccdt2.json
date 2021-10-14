@@ -8,7 +8,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00a-ibm-mq-qm-mq.xxxxx",
+                        "host": "mq00a-ibm-mq-qm-xxxxx",
                         "port": 443
                     }
                 ],
@@ -32,7 +32,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00b-ibm-mq-qm-mq.xxxxx",
+                        "host": "mq00b-ibm-mq-qm-xxxxx",
                         "port": 443
                     }
                 ],
@@ -56,7 +56,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00c-ibm-mq-qm-mq.xxxxx",
+                        "host": "mq00c-ibm-mq-qm-xxxxx",
                         "port": 443
                     }
                 ],
