@@ -8,7 +8,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00a-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "host": "mq00a-ibm-mq-qm-cp4i-mq.*",
                         "port": 443
                     }
                 ],
@@ -27,7 +27,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00b-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "host": "mq00b-ibm-mq-qm-cp4i-mq.*",
                         "port": 443
                     }
                 ],
@@ -46,7 +46,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00c-ibm-mq-qm-cp4i-mq.icp4ivg-f759d6bacb067a9de325a02b179d9665-0000.us-east.containers.appdomain.cloud",
+                        "host": "mq00c-ibm-mq-qm-cp4i-mq.*",
                         "port": 443
                     }
                 ],
