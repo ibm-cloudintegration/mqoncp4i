@@ -8,7 +8,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00a-ibm-mq-qm-mq.dteroks-1000006dxs-z08br-8946bbc006b7c6eb0829d088919818bb-0000.us-east.containers.appdomain.cloud",
+                        "host": "mq00a-ibm-mq-qm-xxxxx",
                         "port": 443
                     }
                 ],
@@ -32,7 +32,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00b-ibm-mq-qm-mq.dteroks-1000006dxs-z08br-8946bbc006b7c6eb0829d088919818bb-0000.us-east.containers.appdomain.cloud",
+                        "host": "mq00b-ibm-mq-qm-xxxxx",
                         "port": 443
                     }
                 ],
@@ -56,7 +56,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00c-ibm-mq-qm-mq.dteroks-1000006dxs-z08br-8946bbc006b7c6eb0829d088919818bb-0000.us-east.containers.appdomain.cloud",
+                        "host": "mq00c-ibm-mq-qm-xxxxx",
                         "port": 443
                     }
                 ],
@@ -80,7 +80,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00a-ibm-mq-qm-mq.dteroks-1000006dxs-z08br-8946bbc006b7c6eb0829d088919818bb-0000.us-east.containers.appdomain.cloud",
+                        "host": "mq00a-ibm-mq-qm-xxxxx",
                         "port": 443
                     }
                 ],
@@ -104,7 +104,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00b-ibm-mq-qm-mq.dteroks-1000006dxs-z08br-8946bbc006b7c6eb0829d088919818bb-0000.us-east.containers.appdomain.cloud",
+                        "host": "mq00b-ibm-mq-qm-xxxxx",
                         "port": 443
                     }
                 ],
@@ -128,7 +128,7 @@
                 "connection": 
                 [
                     {
-                        "host": "mq00c-ibm-mq-qm-mq.dteroks-1000006dxs-z08br-8946bbc006b7c6eb0829d088919818bb-0000.us-east.containers.appdomain.cloud",
+                        "host": "mq00c-ibm-mq-qm-xxxxx",
                         "port": 443
                     }
                 ],
