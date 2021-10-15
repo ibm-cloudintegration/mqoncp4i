@@ -25,7 +25,7 @@ export CHANNELd=mq00chld
 export TOCLUSd=TO_UNICLUS_mq00d
 export UNICLUS=UNICLUS00
 #export SC=managed-nfs-storage
-export VERSION=9.2.2.0-r1
+export VERSION=9.2.3.0-r1
 
 ( echo "cat <<EOF" ; cat uniaddqmgr.yaml_template ; echo EOF ) | sh > uniaddqmgr.yaml
 
