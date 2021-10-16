@@ -1,5 +1,7 @@
 #! /bin/bash
 
+#Use storage class ibmc-file-gold-gid when running on ROKS clusters
+#Use storage class managed-nfs-storage when running on CoC PoT clusters
 #mq00 reserved for instructor
 export TARGET_NAMESPACE=cp4i-mq
 export QMnamea=mq00a
@@ -24,7 +26,8 @@ export SERVICEd=mq00d-ibm-mq
 export CHANNELd=mq00chld
 export TOCLUSd=TO_UNICLUS_mq00d
 export UNICLUS=UNICLUS00
-#export SC=managed-nfs-storage
+export SC=managed-nfs-storage
+#export SC=ibmc-file-gold-gid
 export VERSION=9.2.3.0-r1
 
 ( echo "cat <<EOF" ; cat uniaddqmgr.yaml_template ; echo EOF ) | sh > uniaddqmgr.yaml
