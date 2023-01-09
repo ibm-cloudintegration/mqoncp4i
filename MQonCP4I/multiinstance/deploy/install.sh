@@ -10,6 +10,7 @@ export ROUTE=mq00chl.chl.mq.ibm.com
 export CHANNEL=mq00chl
 export SC=managed-nfs-storage
 export VERSION=9.3.0.1-r4
+export LICENSE=L-RJON-CD3JKX
 #export SC=ibmc-file-gold-gid
 
 ( echo "cat <<EOF" ; cat mqmultiinstance.yaml_template ; echo EOF ) | sh > mqmultiinstance.yaml
