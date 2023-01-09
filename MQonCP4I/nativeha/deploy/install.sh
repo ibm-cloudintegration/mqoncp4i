@@ -7,7 +7,8 @@ export TARGET_NAMESPACE=cp4i-mq
 export QMname=mq00ha
 export CHANNEL=mq00hachl
 export CHLCAPS=MQ00HACHL
-export VERSION=9.2.3.0-r1
+export VERSION=9.3.0.1-r4
+export LICENSE=L-RJON-CD3JKX
 export SC=managed-nfs-storage
 #export SC=ibmc-file-gold-gid
 
