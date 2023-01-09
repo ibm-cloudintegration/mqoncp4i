@@ -9,7 +9,8 @@ export QMpre=mq00
 export ROUTE=mq00strmchl.chl.mq.ibm.com
 export CHANNEL=mq00strmchl
 export CHLCAPS=mq00STRMCHL
-export VERSION=9.2.3.0-r1
+export VERSION=9.3.0.1-r4
+export LICENSE=L-RJON-CD3JKX
 export SC=ibmc-file-gold-gid
 #export SC=managed-nfs-storage
 
