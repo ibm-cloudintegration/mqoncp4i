@@ -28,7 +28,8 @@ export TOCLUSd=TO_UNICLUS_mq00d
 export UNICLUS=UNICLUS00
 export SC=managed-nfs-storage
 #export SC=ibmc-file-gold-gid
-export VERSION=9.2.3.0-r1
+export VERSION=9.3.0.1-r4
+export LICENSE=L-RJON-CD3JKX
 
 ( echo "cat <<EOF" ; cat uniaddqmgr.yaml_template ; echo EOF ) | sh > uniaddqmgr.yaml
 
