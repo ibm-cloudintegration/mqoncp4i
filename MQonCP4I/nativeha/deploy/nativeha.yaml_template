@@ -30,7 +30,7 @@ spec:
   version: $VERSION
   license:
     accept: true
-    license: L-RJON-BXUPZ2
+    license: $LICENSE
     use: "NonProduction"
   pki:
     keys:
