@@ -52,7 +52,7 @@ spec:
   version: $VERSION
   license:
     accept: true
-    license: L-RJON-CD3JKX
+    license: $LICENSE
     use: "NonProduction"
   pki:
     keys:
@@ -159,7 +159,7 @@ spec:
   version: $VERSION
   license:
     accept: true
-    license: L-RJON-CD3JKX
+    license: $LICENSE
     use: "NonProduction"
   pki:
     keys:
@@ -261,7 +261,7 @@ spec:
   version: $VERSION
   license:
     accept: true
-    license: L-RJON-CD3JKX
+    license: $LICENSE
     use: "NonProduction"
   pki:
     keys:
