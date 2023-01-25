@@ -28,7 +28,7 @@ spec:
   version: $VERSION
   license:
     accept: true
-    license: L-RJON-BN7PN3
+    license: $LICENSE
     use: "NonProduction"
   pki:
     keys:
