@@ -21,10 +21,12 @@ export SERVICEc=mq00c-ibm-mq
 export CHANNELc=mq00chlc
 export TOCLUSc=TO_UNICLUS_mq00c
 export UNICLUS=UNICLUS00
-export SC=managed-nfs-storage
 #export SC=ibmc-file-gold-gid
-export VERSION=9.3.0.1-r4
+#export SC=managed-nfs-storage
+export SC=ocs-storagecluster-cephfs
 export LICENSE=L-RJON-CD3JKX
+#export VERSION=9.3.0.1-r4
+export VERSION=9.3.0.1-r2
 
 ( echo "cat <<EOF" ; cat unicluster.yaml_template ; echo EOF ) | sh > unicluster.yaml
 
