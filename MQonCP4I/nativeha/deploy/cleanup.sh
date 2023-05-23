@@ -10,4 +10,10 @@ oc delete configmap nativehamqsc -n $TARGET_NAMESPACE
 oc delete pvc data-$QMname-ibm-mq-0 -n $TARGET_NAMESPACE
 oc delete pvc data-$QMname-ibm-mq-1 -n $TARGET_NAMESPACE
 oc delete pvc data-$QMname-ibm-mq-2 -n $TARGET_NAMESPACE
+oc delete pvc persisted-data-$QMname-ibm-mq-0 -n $TARGET_NAMESPACE
+oc delete pvc persisted-data-$QMname-ibm-mq-1 -n $TARGET_NAMESPACE
+oc delete pvc persisted-data-$QMname-ibm-mq-2 -n $TARGET_NAMESPACE
+oc delete pvc recovery-logs-$QMname-ibm-mq-0 -n $TARGET_NAMESPACE
+oc delete pvc recovery-logs-$QMname-ibm-mq-1 -n $TARGET_NAMESPACE
+oc delete pvc recovery-logs-$QMname-ibm-mq-2 -n $TARGET_NAMESPACE
 oc delete route mq-traffic-mq-$QMname-ibm-mq-qm -n $TARGET_NAMESPACE
