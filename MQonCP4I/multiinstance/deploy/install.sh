@@ -8,10 +8,12 @@ export QMname=mq00mi
 export QMpre=mq00
 export ROUTE=mq00chl.chl.mq.ibm.com
 export CHANNEL=mq00chl
-export SC=managed-nfs-storage
-export VERSION=9.3.0.1-r4
 export LICENSE=L-RJON-CD3JKX
+#export VERSION=9.3.0.1-r4
+export VERSION=9.3.0.1-r2
 #export SC=ibmc-file-gold-gid
+#export SC=managed-nfs-storage
+export SC=ocs-storagecluster-cephfs
 
 ( echo "cat <<EOF" ; cat mqmultiinstance.yaml_template ; echo EOF ) | sh > mqmultiinstance.yaml
 
