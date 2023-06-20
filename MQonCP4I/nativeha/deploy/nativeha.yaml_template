@@ -44,6 +44,7 @@ spec:
     enabled: true
   securityContext:
      supplementalGroups: [99]
+     supplementalGroups: [65534]
   queueManager:
     name: $QMname
     mqsc:
