@@ -1,0 +1,938 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployer_custom_values_instructions>
+  <overview>
+    <description>
+      The TechZone Deployer Operator enables automated provisioning of complex IBM software
+      on Red Hat OpenShift clusters. This guide covers creating custom_values JSON structures
+      that content developers add to TechZone environment definitions. When a user provisions
+      an environment, the custom_values JSON is injected at runtime to create a Deployer CR
+      that triggers automated deployments.
+    </description>
+    <key_concepts>
+      <concept>Environment Definition - YAML file created by content developers that defines a TechZone environment</concept>
+      <concept>custom_values - JSON structure added to environment definition's infrastructure section</concept>
+      <concept>Deployer CR - Kubernetes Custom Resource created automatically by TechZone platform using custom_values</concept>
+      <concept>Parameters file - YAML configuration in the deployer repository referenced for deployment customization</concept>
+      <concept>Post-deployment chaining - Automatic triggering of secondary deployments after primary succeeds</concept>
+    </key_concepts>
+    <critical_principle>
+      The custom_values JSON structure is NOT Terraform code. It is a runtime configuration
+      that content developers add to the environment definition. When a user provisions the
+      environment in TechZone, the platform injects this JSON to create the Deployer CR.
+      The structure must match the Deployment CRD schema defined in the itz-deployer-operator.
+    </critical_principle>
+    <where_it_goes>
+      <description>
+        Content developers add the custom_values JSON to the environment definition file
+        in the infrastructure section. This is part of the environment definition YAML that
+        gets uploaded to TechZone when creating or updating an environment offering.
+      </description>
+      <location>Environment Definition YAML → infrastructure → custom_values</location>
+      <workflow>
+        1. Content developer creates environment definition YAML file
+        2. Adds custom_values JSON to infrastructure section
+        3. Uploads environment definition to TechZone
+        4. User provisions environment through TechZone UI
+        5. TechZone platform injects custom_values at runtime
+        6. Platform creates Deployer CR in OpenShift cluster
+        7. Deployer operator executes the deployment
+      </workflow>
+    </where_it_goes>
+  </overview>
+
+  <custom_values_structure>
+    <description>
+      The custom_values field contains a JSON object with a "deployer" key that defines
+      the deployment configuration. This structure maps directly to the Deployment CR spec.
+    </description>
+    
+    <base_structure>
+      <description>Minimal custom_values structure for a deployer-based deployment</description>
+      <example><![CDATA[
+{
+  "deployer": {
+    "repoName": "deployer-cp4d",
+    "release": "base-5.3.0",
+    "parameters": "base-parameters.yaml"
+  }
+}
+]]></example>
+    </base_structure>
+
+    <complete_structure>
+      <description>Complete custom_values structure with all optional fields</description>
+      <example><![CDATA[
+{
+  "deployer": {
+    "repoName": "deployer-cp4d",
+    "release": "watsonx-ai-5.2.0",
+    "parameters": "watsonx-ai-5.2.0.yaml",
+    "ansible": {
+      "ansiblePlaybook": "",
+      "requirements": ""
+    },
+    "postDeployment": {
+      "repoName": "deployer-ansible-playbook-example",
+      "release": "v1.0",
+      "parameters": "variables.yml",
+      "ansible": {
+        "ansiblePlaybook": "playbook.yml",
+        "requirements": ""
+      }
+    }
+  }
+}
+]]></example>
+    </complete_structure>
+
+    <field_descriptions>
+      <field name="deployer">
+        <required>true</required>
+        <type>object</type>
+        <description>Root object containing all deployer configuration</description>
+      </field>
+
+      <field name="deployer.repoName">
+        <required>true</required>
+        <type>string</type>
+        <description>Git repository name under github.ibm.com/itz-content</description>
+        <examples>
+          <example>deployer-cp4d</example>
+          <example>deployer-ansible-playbook-example</example>
+          <example>deployer-watsonx</example>
+        </examples>
+        <validation>Must be a valid repository name accessible to the deployer operator</validation>
+      </field>
+
+      <field name="deployer.release">
+        <required>true</required>
+        <type>string</type>
+        <description>Git tag or branch to deploy from the repository</description>
+        <examples>
+          <example>base-5.3.0</example>
+          <example>watsonx-ai-5.2.0</example>
+          <example>v1.0</example>
+          <example>main</example>
+        </examples>
+        <best_practice>Use specific version tags rather than branch names for reproducible deployments</best_practice>
+      </field>
+
+      <field name="deployer.parameters">
+        <required>false</required>
+        <type>string</type>
+        <description>Path to parameters YAML file relative to repository root</description>
+        <examples>
+          <example>base-parameters.yaml</example>
+          <example>watsonx-ai-5.2.0.yaml</example>
+          <example>config/production.yaml</example>
+        </examples>
+        <note>This file must exist in the repository at the specified release tag</note>
+      </field>
+
+      <field name="deployer.ansible">
+        <required>false</required>
+        <type>object</type>
+        <description>Ansible execution configuration. When specified, uses Ansible Job mode instead of Tekton Pipeline mode</description>
+      </field>
+
+      <field name="deployer.ansible.ansiblePlaybook">
+        <required>false</required>
+        <type>string</type>
+        <description>Path to Ansible playbook relative to repository root</description>
+        <examples>
+          <example>site.yml</example>
+          <example>playbook.yml</example>
+          <example>playbooks/deploy.yml</example>
+        </examples>
+        <trigger>When non-empty, switches deployer to Ansible Job mode</trigger>
+      </field>
+
+      <field name="deployer.ansible.requirements">
+        <required>false</required>
+        <type>string</type>
+        <description>Path to Ansible requirements file for installing collections/roles</description>
+        <examples>
+          <example>requirements.yaml</example>
+          <example>requirements.yml</example>
+          <example>ansible/requirements.yaml</example>
+        </examples>
+      </field>
+
+      <field name="deployer.postDeployment">
+        <required>false</required>
+        <type>object</type>
+        <description>Configuration for automatic post-deployment chaining. When specified, a second deployment is triggered after the primary deployment succeeds</description>
+      </field>
+
+      <field name="deployer.postDeployment.repoName">
+        <required>true (if postDeployment is specified)</required>
+        <type>string</type>
+        <description>Git repository name for post-deployment</description>
+      </field>
+
+      <field name="deployer.postDeployment.release">
+        <required>true (if postDeployment is specified)</required>
+        <type>string</type>
+        <description>Git tag or branch for post-deployment</description>
+      </field>
+
+      <field name="deployer.postDeployment.parameters">
+        <required>false</required>
+        <type>string</type>
+        <description>Parameters file for post-deployment</description>
+      </field>
+
+      <field name="deployer.postDeployment.ansible">
+        <required>false</required>
+        <type>object</type>
+        <description>Ansible configuration for post-deployment (same structure as primary ansible field)</description>
+      </field>
+    </field_descriptions>
+  </custom_values_structure>
+
+  <execution_modes>
+    <mode name="Tekton Pipeline Mode">
+      <description>Default execution mode using Tekton Pipelines for complex orchestration</description>
+      <trigger>When ansible.ansiblePlaybook is empty or not specified</trigger>
+      <custom_values_example><![CDATA[
+{
+  "deployer": {
+    "repoName": "deployer-cp4d",
+    "release": "base-5.3.0",
+    "parameters": "base-cpd.yaml"
+  }
+}
+]]></custom_values_example>
+      <behavior>
+        - Operator clones repository at specified release tag
+        - Reads pipeline.yaml and pipelinerun.yaml from repository root
+        - Creates Tekton PipelineRun with parameters file mounted
+        - Monitors PipelineRun status and updates Deployment CR
+      </behavior>
+      <use_cases>
+        <use_case>Cloud Pak for Data deployments</use_case>
+        <use_case>Multi-stage provisioning workflows</use_case>
+        <use_case>Complex deployments requiring task orchestration</use_case>
+      </use_cases>
+    </mode>
+
+    <mode name="Ansible Job Mode">
+      <description>Ansible-based execution using Kubernetes Jobs for configuration management</description>
+      <trigger>When ansible.ansiblePlaybook is specified and non-empty</trigger>
+      <custom_values_example><![CDATA[
+{
+  "deployer": {
+    "repoName": "deployer-ansible-playbook-example",
+    "release": "v1.0",
+    "parameters": "variables.yml",
+    "ansible": {
+      "ansiblePlaybook": "playbook.yml",
+      "requirements": "requirements.yaml"
+    }
+  }
+}
+]]></custom_values_example>
+      <behavior>
+        - Operator creates Kubernetes Job with two containers
+        - Init container clones Git repository
+        - Main container runs ansible-runner with specified playbook
+        - Parameters file passed as extra vars to Ansible
+      </behavior>
+      <use_cases>
+        <use_case>Configuration management tasks</use_case>
+        <use_case>Post-deployment customization</use_case>
+        <use_case>Simple automation workflows</use_case>
+      </use_cases>
+    </mode>
+  </execution_modes>
+
+  <post_deployment_chaining>
+    <description>
+      Post-deployment chaining enables multi-stage provisioning workflows where a secondary
+      deployment is automatically triggered after the primary deployment succeeds. This is
+      useful for separating infrastructure provisioning from application configuration.
+    </description>
+
+    <use_cases>
+      <use_case>Deploy base platform (Tekton), then configure services (Ansible)</use_case>
+      <use_case>Install operators (Tekton), then create operand instances (Tekton)</use_case>
+      <use_case>Provision infrastructure (Tekton), then run post-configuration (Ansible)</use_case>
+    </use_cases>
+
+    <example_tekton_to_ansible><![CDATA[
+{
+  "deployer": {
+    "repoName": "deployer-cp4d",
+    "release": "watsonx-ai-5.2.0",
+    "parameters": "watsonx-ai-5.2.0.yaml",
+    "postDeployment": {
+      "repoName": "deployer-ansible-playbook-example",
+      "release": "v1.0",
+      "parameters": "variables.yml",
+      "ansible": {
+        "ansiblePlaybook": "playbook.yml",
+        "requirements": ""
+      }
+    }
+  }
+}
+]]></example_tekton_to_ansible>
+
+    <example_tekton_to_tekton><![CDATA[
+{
+  "deployer": {
+    "repoName": "deployer-operators",
+    "release": "v2.0",
+    "parameters": "operators.yaml",
+    "postDeployment": {
+      "repoName": "deployer-operands",
+      "release": "v1.5",
+      "parameters": "operands.yaml"
+    }
+  }
+}
+]]></example_tekton_to_tekton>
+
+    <behavior>
+      - Primary deployment executes first
+      - Operator monitors primary deployment status
+      - When primary reaches "Succeeded" phase, operator automatically creates child Deployment CR
+      - Child Deployment CR has owner reference set to primary for cascading deletion
+      - Post-deployment executes independently with its own status tracking
+    </behavior>
+  </post_deployment_chaining>
+
+  <environment_definition_integration>
+    <description>
+      Content developers add the custom_values JSON to the TechZone environment definition
+      file. This is a YAML file that defines the entire environment offering, including
+      infrastructure configuration, variables, and deployment settings. The custom_values
+      goes in the infrastructure section of this YAML file.
+    </description>
+
+    <critical_understanding>
+      <point>Environment definitions are YAML files created by content developers</point>
+      <point>custom_values is a JSON object embedded within the YAML infrastructure section</point>
+      <point>When users provision the environment, TechZone injects this JSON at runtime</point>
+      <point>The platform automatically creates the Deployer CR using the custom_values</point>
+      <point>Content developers upload environment definitions to TechZone via the UI or API</point>
+    </critical_understanding>
+
+    <complete_environment_definition_example><![CDATA[
+# Complete TechZone Environment Definition Example
+# This is the YAML file that content developers create and upload to TechZone
+
+apiVersion: techzone.ibm.com/v1
+kind: EnvironmentDefinition
+metadata:
+  name: cpd-watsonx-ai
+  title: "Cloud Pak for Data with watsonx.ai"
+  description: "Automated deployment of Cloud Pak for Data with watsonx.ai using TechZone Deployer"
+  version: "5.2.0"
+  
+spec:
+  # Platform selection - determines which infrastructure is used
+  platform: "OpenShift Deployer"
+  
+  # Infrastructure configuration
+  infrastructure:
+    # This is where custom_values goes - embedded JSON in YAML
+    custom_values:
+      deployer:
+        repoName: "deployer-cp4d"
+        release: "watsonx-ai-5.2.0"
+        parameters: "watsonx-ai-5.2.0.yaml"
+        postDeployment:
+          repoName: "deployer-ansible-playbook-example"
+          release: "v1.0"
+          parameters: "variables.yml"
+          ansible:
+            ansiblePlaybook: "playbook.yml"
+            requirements: ""
+    
+    # Other infrastructure settings
+    cluster_size: "large"
+    storage_class: "ocs-storagecluster-cephfs"
+    worker_nodes: 3
+  
+  # User-facing variables (optional)
+  variables:
+    - name: "enable_watson_studio"
+      type: "boolean"
+      default: true
+      description: "Enable Watson Studio component"
+    
+    - name: "enable_watson_ml"
+      type: "boolean"
+      default: true
+      description: "Enable Watson Machine Learning component"
+  
+  # Documentation and support
+  documentation:
+    getting_started: "https://github.ibm.com/itz-content/deployer-cp4d/blob/main/README.md"
+    troubleshooting: "https://github.ibm.com/itz-content/deployer-cp4d/blob/main/TROUBLESHOOTING.md"
+]]></complete_environment_definition_example>
+
+    <minimal_environment_definition_example><![CDATA[
+# Minimal Environment Definition with custom_values
+# This shows the essential structure content developers need
+
+apiVersion: techzone.ibm.com/v1
+kind: EnvironmentDefinition
+metadata:
+  name: simple-deployer-example
+  title: "Simple Deployer Example"
+  
+spec:
+  platform: "OpenShift Deployer"
+  
+  infrastructure:
+    # The custom_values JSON goes here
+    custom_values:
+      deployer:
+        repoName: "deployer-cp4d"
+        release: "base-5.3.0"
+        parameters: "base-cpd.yaml"
+]]></minimal_environment_definition_example>
+
+    <where_to_add_custom_values>
+      <step number="1">
+        <title>Create or Edit Environment Definition YAML</title>
+        <description>Content developers create a new YAML file or edit an existing environment definition</description>
+        <location>Local development environment or TechZone content repository</location>
+      </step>
+      
+      <step number="2">
+        <title>Locate Infrastructure Section</title>
+        <description>Find the spec.infrastructure section in the YAML file</description>
+        <yaml_path>spec → infrastructure → custom_values</yaml_path>
+      </step>
+      
+      <step number="3">
+        <title>Add custom_values JSON</title>
+        <description>Insert the custom_values JSON object with deployer configuration</description>
+        <format>JSON object embedded in YAML (proper indentation required)</format>
+      </step>
+      
+      <step number="4">
+        <title>Validate YAML Syntax</title>
+        <description>Ensure YAML is valid and JSON is properly embedded</description>
+        <tools>yamllint, yq, or online YAML validators</tools>
+      </step>
+      
+      <step number="5">
+        <title>Upload to TechZone</title>
+        <description>Upload the environment definition to TechZone via UI or API</description>
+        <result>Environment becomes available for users to provision</result>
+      </step>
+    </where_to_add_custom_values>
+
+    <variable_substitution>
+      <description>
+        The custom_values structure can reference other environment variables using
+        template syntax, allowing dynamic configuration based on user selections or
+        infrastructure context.
+      </description>
+      <example><![CDATA[
+infrastructure:
+  custom_values:
+    deployer:
+      repoName: "{{ deployer_repo }}"
+      release: "{{ deployer_version }}"
+      parameters: "{{ cluster_size }}-parameters.yaml"
+  
+  # Variables that can be referenced
+  deployer_repo: "deployer-cp4d"
+  deployer_version: "base-5.3.0"
+  cluster_size: "large"
+]]></example>
+    </variable_substitution>
+
+    <runtime_behavior>
+      <description>What happens when a user provisions an environment with custom_values</description>
+      <sequence>
+        <step>User selects environment in TechZone UI and clicks "Reserve"</step>
+        <step>TechZone platform provisions OpenShift cluster</step>
+        <step>Platform reads custom_values from environment definition</step>
+        <step>Platform creates Deployment CR in cluster using custom_values JSON</step>
+        <step>Deployer operator detects new Deployment CR</step>
+        <step>Operator clones Git repository at specified release</step>
+        <step>Operator executes Tekton pipeline or Ansible playbook</step>
+        <step>Deployment status updates in real-time</step>
+        <step>If postDeployment configured, secondary deployment triggers automatically</step>
+        <step>User receives provisioned environment with deployed software</step>
+      </sequence>
+    </runtime_behavior>
+  </environment_definition_integration>
+
+  <common_patterns>
+    <pattern name="cloud_pak_for_data">
+      <description>Standard Cloud Pak for Data deployment using Tekton</description>
+      <custom_values><![CDATA[
+{
+  "deployer": {
+    "repoName": "deployer-cp4d",
+    "release": "base-5.3.0",
+    "parameters": "base-cpd.yaml"
+  }
+}
+]]></custom_values>
+      <notes>
+        - Uses Tekton Pipeline mode (no ansible specified)
+        - Parameters file must exist in deployer-cp4d repository at base-5.3.0 tag
+        - Suitable for full Cloud Pak for Data platform deployment
+      </notes>
+    </pattern>
+
+    <pattern name="watsonx_with_post_config">
+      <description>watsonx.ai deployment with Ansible post-configuration</description>
+      <custom_values><![CDATA[
+{
+  "deployer": {
+    "repoName": "deployer-cp4d",
+    "release": "watsonx-ai-5.2.0",
+    "parameters": "watsonx-ai-5.2.0.yaml",
+    "postDeployment": {
+      "repoName": "deployer-ansible-playbook-example",
+      "release": "v1.0",
+      "parameters": "variables.yml",
+      "ansible": {
+        "ansiblePlaybook": "playbook.yml",
+        "requirements": ""
+      }
+    }
+  }
+}
+]]></custom_values>
+      <notes>
+        - Primary deployment uses Tekton to install watsonx.ai
+        - Post-deployment uses Ansible for custom configuration
+        - Demonstrates Tekton-to-Ansible chaining pattern
+      </notes>
+    </pattern>
+
+    <pattern name="ansible_only">
+      <description>Pure Ansible deployment for configuration management</description>
+      <custom_values><![CDATA[
+{
+  "deployer": {
+    "repoName": "deployer-ansible-playbook-example",
+    "release": "v1.0",
+    "parameters": "variables.yml",
+    "ansible": {
+      "ansiblePlaybook": "playbook.yml",
+      "requirements": "requirements.yaml"
+    }
+  }
+}
+]]></custom_values>
+      <notes>
+        - Uses Ansible Job mode exclusively
+        - Suitable for post-deployment configuration tasks
+        - Requires ansible.ansiblePlaybook to be specified
+      </notes>
+    </pattern>
+
+    <pattern name="multi_stage_operators">
+      <description>Two-stage operator deployment: install operators, then create instances</description>
+      <custom_values><![CDATA[
+{
+  "deployer": {
+    "repoName": "deployer-operators",
+    "release": "v2.0",
+    "parameters": "operators.yaml",
+    "postDeployment": {
+      "repoName": "deployer-operands",
+      "release": "v1.5",
+      "parameters": "operands.yaml"
+    }
+  }
+}
+]]></custom_values>
+      <notes>
+        - Both stages use Tekton Pipeline mode
+        - First stage installs operators
+        - Second stage creates operand instances
+        - Demonstrates Tekton-to-Tekton chaining pattern
+      </notes>
+    </pattern>
+  </common_patterns>
+
+  <parameters_file_requirements>
+    <description>
+      The parameters file referenced in custom_values must exist in the Git repository
+      at the specified release tag. The file structure depends on whether using Tekton
+      or Ansible mode.
+    </description>
+
+    <tekton_parameters>
+      <description>Parameters for Tekton Pipeline mode</description>
+      <format>YAML file with key-value pairs matching pipeline parameter definitions</format>
+      <example><![CDATA[
+# base-cpd.yaml - Tekton parameters file
+cluster_name: "my-cluster"
+storage_class: "ocs-storagecluster-cephfs"
+namespace: "cp4d"
+cpd_version: "5.3.0"
+
+components:
+  watson_studio: true
+  watson_ml: true
+  watson_knowledge: false
+
+resources:
+  cpu_limit: "4"
+  memory_limit: "16Gi"
+]]></example>
+      <location>Must be in repository root or path specified in deployer.parameters</location>
+    </tekton_parameters>
+
+    <ansible_parameters>
+      <description>Parameters for Ansible Job mode</description>
+      <format>YAML file with Ansible extra vars structure</format>
+      <example><![CDATA[
+# variables.yml - Ansible parameters file
+cluster_name: "my-cluster"
+target_namespace: "cp4d"
+
+services:
+  - name: "watson-studio"
+    enabled: true
+  - name: "watson-ml"
+    enabled: true
+
+configuration:
+  storage_class: "ocs-storagecluster-cephfs"
+  cpu_limit: "4"
+  memory_limit: "16Gi"
+]]></example>
+      <location>Must be in repository root or path specified in deployer.parameters</location>
+    </ansible_parameters>
+
+    <best_practices>
+      <practice>Use descriptive parameter file names that indicate version or configuration</practice>
+      <practice>Keep parameters files in repository root for simplicity</practice>
+      <practice>Document required vs optional parameters in repository README</practice>
+      <practice>Use consistent naming conventions across parameters files</practice>
+      <practice>Version parameters files alongside code releases</practice>
+    </best_practices>
+  </parameters_file_requirements>
+
+  <validation_rules>
+    <rule priority="critical">
+      <name>Repository Accessibility</name>
+      <description>The repoName must reference a repository accessible to the deployer operator</description>
+      <validation>Repository must exist under github.ibm.com/itz-content</validation>
+    </rule>
+
+    <rule priority="critical">
+      <name>Release Tag Existence</name>
+      <description>The release tag or branch must exist in the repository</description>
+      <validation>Git tag or branch must be valid and accessible</validation>
+    </rule>
+
+    <rule priority="critical">
+      <name>Parameters File Existence</name>
+      <description>If parameters is specified, the file must exist in the repository</description>
+      <validation>File must exist at specified path in repository at release tag</validation>
+    </rule>
+
+    <rule priority="high">
+      <name>Ansible Playbook Path</name>
+      <description>If ansible.ansiblePlaybook is specified, the playbook must exist</description>
+      <validation>Playbook file must exist in repository at specified path</validation>
+    </rule>
+
+    <rule priority="high">
+      <name>Post-Deployment Completeness</name>
+      <description>If postDeployment is specified, repoName and release are required</description>
+      <validation>Both repoName and release must be provided in postDeployment object</validation>
+    </rule>
+
+    <rule priority="medium">
+      <name>JSON Structure Validity</name>
+      <description>The custom_values must be valid JSON</description>
+      <validation>Must parse as valid JSON with proper syntax</validation>
+    </rule>
+
+    <rule priority="medium">
+      <name>Empty String Handling</name>
+      <description>Empty strings in ansible fields indicate Tekton mode</description>
+      <validation>Use empty strings ("") not null for unused ansible fields</validation>
+    </rule>
+  </validation_rules>
+
+  <troubleshooting>
+    <issue name="deployment_not_created">
+      <symptoms>Deployment CR is not created after environment provisioning</symptoms>
+      <causes>
+        <cause>custom_values JSON is malformed or invalid</cause>
+        <cause>Deployer operator is not running in the cluster</cause>
+        <cause>RBAC permissions missing for operator</cause>
+      </causes>
+      <remediation>
+        <step>Validate JSON syntax using a JSON validator</step>
+        <step>Check operator pod status: oc get pods -n itz-deployer-operator-system</step>
+        <step>Review operator logs for errors</step>
+        <step>Verify custom_values structure matches schema</step>
+      </remediation>
+    </issue>
+
+    <issue name="repository_not_found">
+      <symptoms>Deployment fails with "repository not found" error</symptoms>
+      <causes>
+        <cause>Repository name is incorrect or misspelled</cause>
+        <cause>Repository is not under github.ibm.com/itz-content</cause>
+        <cause>Git credentials are missing or invalid</cause>
+      </causes>
+      <remediation>
+        <step>Verify repository exists: https://github.ibm.com/itz-content/[repoName]</step>
+        <step>Check repository name spelling in custom_values</step>
+        <step>Verify operator has access to GitHub credentials</step>
+        <step>Check IBM Secrets Manager configuration</step>
+      </remediation>
+    </issue>
+
+    <issue name="release_tag_not_found">
+      <symptoms>Deployment fails with "release tag not found" error</symptoms>
+      <causes>
+        <cause>Release tag or branch does not exist in repository</cause>
+        <cause>Tag name is misspelled</cause>
+        <cause>Tag was deleted or renamed</cause>
+      </causes>
+      <remediation>
+        <step>List available tags: git ls-remote --tags https://github.ibm.com/itz-content/[repoName]</step>
+        <step>Verify tag name matches exactly (case-sensitive)</step>
+        <step>Use git tag or git branch to confirm existence</step>
+        <step>Check repository release page on GitHub</step>
+      </remediation>
+    </issue>
+
+    <issue name="parameters_file_not_found">
+      <symptoms>Deployment fails with "parameters file not found" error</symptoms>
+      <causes>
+        <cause>Parameters file path is incorrect</cause>
+        <cause>File does not exist at specified release tag</cause>
+        <cause>Path is absolute instead of relative</cause>
+      </causes>
+      <remediation>
+        <step>Clone repository at release tag and verify file exists</step>
+        <step>Check file path is relative to repository root</step>
+        <step>Verify file exists in repository at the specified tag</step>
+        <step>Review repository structure and adjust path</step>
+      </remediation>
+    </issue>
+
+    <issue name="ansible_playbook_not_found">
+      <symptoms>Ansible Job fails with "playbook not found" error</symptoms>
+      <causes>
+        <cause>Playbook path is incorrect</cause>
+        <cause>Playbook does not exist in repository</cause>
+        <cause>Path is absolute instead of relative</cause>
+      </causes>
+      <remediation>
+        <step>Verify playbook exists in repository at release tag</step>
+        <step>Check playbook path is relative to repository root</step>
+        <step>Review ansible.ansiblePlaybook value in custom_values</step>
+        <step>Test playbook locally: ansible-playbook [playbook.yml]</step>
+      </remediation>
+    </issue>
+
+    <issue name="post_deployment_not_triggered">
+      <symptoms>Primary deployment succeeds but post-deployment does not start</symptoms>
+      <causes>
+        <cause>postDeployment configuration is incomplete</cause>
+        <cause>Primary deployment did not reach "Succeeded" phase</cause>
+        <cause>Operator failed to create child Deployment CR</cause>
+      </causes>
+      <remediation>
+        <step>Verify primary deployment status: oc get deployment [name] -o yaml</step>
+        <step>Check status.phase is "Succeeded"</step>
+        <step>Review operator logs for post-deployment creation errors</step>
+        <step>Verify postDeployment has required fields (repoName, release)</step>
+      </remediation>
+    </issue>
+  </troubleshooting>
+
+  <best_practices>
+    <practice category="structure">
+      <rule>Always use the "deployer" root key in custom_values</rule>
+      <rule>Provide explicit release tags rather than branch names for reproducibility</rule>
+      <rule>Use descriptive parameters file names that indicate version or purpose</rule>
+      <rule>Keep parameters files in repository root for simplicity</rule>
+    </practice>
+
+    <practice category="execution_mode">
+      <rule>Use Tekton mode for complex multi-stage deployments</rule>
+      <rule>Use Ansible mode for configuration management and post-deployment tasks</rule>
+      <rule>Leave ansible fields empty ("") when using Tekton mode</rule>
+      <rule>Specify ansible.ansiblePlaybook to switch to Ansible mode</rule>
+    </practice>
+
+    <practice category="post_deployment">
+      <rule>Use post-deployment chaining for multi-stage workflows</rule>
+      <rule>Separate infrastructure provisioning from application configuration</rule>
+      <rule>Consider Tekton-to-Ansible pattern for platform-then-config workflows</rule>
+      <rule>Ensure post-deployment repository and release are valid</rule>
+    </practice>
+
+    <practice category="parameters">
+      <rule>Document required parameters in repository README</rule>
+      <rule>Use consistent parameter naming across files</rule>
+      <rule>Version parameters files alongside code releases</rule>
+      <rule>Validate parameters file structure before committing</rule>
+    </practice>
+
+    <practice category="testing">
+      <rule>Test custom_values structure in development environment first</rule>
+      <rule>Verify repository and release tag accessibility</rule>
+      <rule>Confirm parameters file exists at specified path</rule>
+      <rule>Test post-deployment chaining separately</rule>
+    </practice>
+  </best_practices>
+
+  <workflow_integration>
+    <description>
+      When creating environment definitions for OpenShift Deployer platform,
+      follow this workflow to properly configure custom_values.
+    </description>
+
+    <step number="1">
+      <title>Identify Deployment Requirements</title>
+      <actions>
+        <action>Determine what software/platform needs to be deployed</action>
+        <action>Identify if Tekton or Ansible mode is appropriate</action>
+        <action>Determine if post-deployment chaining is needed</action>
+      </actions>
+    </step>
+
+    <step number="2">
+      <title>Locate Deployer Repository</title>
+      <actions>
+        <action>Find the appropriate deployer repository under github.ibm.com/itz-content</action>
+        <action>Identify the correct release tag for the desired version</action>
+        <action>Review repository README for parameters file requirements</action>
+      </actions>
+    </step>
+
+    <step number="3">
+      <title>Identify Parameters File</title>
+      <actions>
+        <action>Locate the parameters file in the repository</action>
+        <action>Verify file exists at the release tag</action>
+        <action>Review parameters structure and required values</action>
+      </actions>
+    </step>
+
+    <step number="4">
+      <title>Construct custom_values JSON</title>
+      <actions>
+        <action>Start with base structure: {"deployer": {...}}</action>
+        <action>Add repoName, release, and parameters fields</action>
+        <action>Add ansible configuration if using Ansible mode</action>
+        <action>Add postDeployment configuration if chaining is needed</action>
+      </actions>
+    </step>
+
+    <step number="5">
+      <title>Validate Structure</title>
+      <actions>
+        <action>Validate JSON syntax</action>
+        <action>Verify all required fields are present</action>
+        <action>Confirm repository and release tag exist</action>
+        <action>Verify parameters file exists at specified path</action>
+      </actions>
+    </step>
+
+    <step number="6">
+      <title>Add to Environment Definition</title>
+      <actions>
+        <action>Add custom_values to infrastructure_variables section</action>
+        <action>Test in development environment</action>
+        <action>Document any special configuration requirements</action>
+      </actions>
+    </step>
+  </workflow_integration>
+
+  <reference_schema>
+    <title>Complete custom_values JSON Schema</title>
+    <description>
+      This schema defines the complete structure of the custom_values field
+      for deployer-based deployments.
+    </description>
+    <schema><![CDATA[
+{
+  "type": "object",
+  "required": ["deployer"],
+  "properties": {
+    "deployer": {
+      "type": "object",
+      "required": ["repoName", "release"],
+      "properties": {
+        "repoName": {
+          "type": "string",
+          "description": "Git repository name under github.ibm.com/itz-content",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "release": {
+          "type": "string",
+          "description": "Git tag or branch to deploy",
+          "minLength": 1
+        },
+        "parameters": {
+          "type": "string",
+          "description": "Path to parameters file relative to repository root"
+        },
+        "ansible": {
+          "type": "object",
+          "properties": {
+            "ansiblePlaybook": {
+              "type": "string",
+              "description": "Path to Ansible playbook (triggers Ansible mode if non-empty)"
+            },
+            "requirements": {
+              "type": "string",
+              "description": "Path to Ansible requirements file"
+            }
+          }
+        },
+        "postDeployment": {
+          "type": "object",
+          "required": ["repoName", "release"],
+          "properties": {
+            "repoName": {
+              "type": "string",
+              "description": "Git repository name for post-deployment"
+            },
+            "release": {
+              "type": "string",
+              "description": "Git tag or branch for post-deployment"
+            },
+            "parameters": {
+              "type": "string",
+              "description": "Parameters file for post-deployment"
+            },
+            "ansible": {
+              "type": "object",
+              "properties": {
+                "ansiblePlaybook": {
+                  "type": "string",
+                  "description": "Ansible playbook for post-deployment"
+                },
+                "requirements": {
+                  "type": "string",
+                  "description": "Ansible requirements for post-deployment"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+]]></schema>
+  </reference_schema>
+</deployer_custom_values_instructions>
+
+<!-- Made with Bob -->

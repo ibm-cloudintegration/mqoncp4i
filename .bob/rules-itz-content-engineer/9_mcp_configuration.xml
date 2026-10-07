@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mcp_configuration_rules>
+  <overview>
+    <description>
+      This guide defines how the mode should interact with MCP servers, particularly
+      the TechZone Documentation and Request MCP servers. It includes configuration
+      requirements and automatic documentation searching behavior.
+    </description>
+  </overview>
+
+  <techzone_api_token_configuration>
+    <title>TechZone API Token Setup</title>
+    <description>
+      The TechZone MCP servers require a bearer token with EVERY tool call.
+      The token should be configured as an environment variable and referenced
+      in the mcp.json file using ${TECHZONE_API_TOKEN} syntax.
+    </description>
+
+    <configuration_location>
+      <file>.bob/mcp.json</file>
+      <servers>
+        <server>techzone-documentation-mcp</server>
+        <server>techzone-request-mcp</server>
+      </servers>
+    </configuration_location>
+
+    <required_format>
+      <description>
+        The mcp.json file should reference the environment variable using ${TECHZONE_API_TOKEN} syntax.
+        Bob will automatically resolve this from the environment variable.
+      </description>
+      <example><![CDATA[
+{
+  "mcpServers": {
+    "techzone-documentation-mcp": {
+      "type": "streamable-http",
+      "url": "https://documentation-mcp.techzone.ibm.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${TECHZONE_API_TOKEN}"
+      },
+      "disabled": false,
+      "alwaysAllow": []
+    },
+    "techzone-request-mcp": {
+      "type": "streamable-http",
+      "url": "https://request-mcp.techzone.ibm.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${TECHZONE_API_TOKEN}"
+      },
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}
+      ]]></example>
+    </required_format>
+
+    <user_instructions>
+      <step number="1">
+        <title>Obtain TechZone API Token</title>
+        <action>Navigate to https://techzone.ibm.com/my/profile</action>
+        <action>Click "Show Token"</action>
+        <action>Copy the token</action>
+      </step>
+
+      <step number="2">
+        <title>Set Environment Variable</title>
+        <description>Set the TECHZONE_API_TOKEN environment variable on your system</description>
+        
+        <platform name="macOS/Linux">
+          <temporary>
+            <description>Set for current terminal session only</description>
+            <command>export TECHZONE_API_TOKEN="tz_your_actual_token_here"</command>
+          </temporary>
+          <permanent_bash>
+            <description>Add to ~/.bashrc for permanent configuration</description>
+            <command>echo 'export TECHZONE_API_TOKEN="tz_your_actual_token_here"' >> ~/.bashrc</command>
+            <command>source ~/.bashrc</command>
+          </permanent_bash>
+          <permanent_zsh>
+            <description>Add to ~/.zshrc for permanent configuration (macOS default)</description>
+            <command>echo 'export TECHZONE_API_TOKEN="tz_your_actual_token_here"' >> ~/.zshrc</command>
+            <command>source ~/.zshrc</command>
+          </permanent_zsh>
+        </platform>
+        
+        <platform name="Windows">
+          <temporary_cmd>
+            <description>Set for current CMD session only</description>
+            <command>set TECHZONE_API_TOKEN=tz_your_actual_token_here</command>
+          </temporary_cmd>
+          <temporary_powershell>
+            <description>Set for current PowerShell session only</description>
+            <command>$env:TECHZONE_API_TOKEN="tz_your_actual_token_here"</command>
+          </temporary_powershell>
+          <permanent>
+            <description>Set permanently via System Properties</description>
+            <step>Open System Properties (Win + Pause/Break)</step>
+            <step>Click "Advanced system settings"</step>
+            <step>Click "Environment Variables"</step>
+            <step>Under "User variables", click "New"</step>
+            <step>Variable name: TECHZONE_API_TOKEN</step>
+            <step>Variable value: tz_your_actual_token_here</step>
+            <step>Click OK and restart applications</step>
+          </permanent>
+        </platform>
+      </step>
+
+      <step number="3">
+        <title>Verify Configuration</title>
+        <action>Restart VS Code/terminal to load the new environment variable</action>
+        <action>The mode will automatically retrieve the token from the environment variable</action>
+        <verification>
+          <command_unix>echo $TECHZONE_API_TOKEN</command_unix>
+          <command_windows_cmd>echo %TECHZONE_API_TOKEN%</command_windows_cmd>
+          <command_windows_ps>echo $env:TECHZONE_API_TOKEN</command_windows_ps>
+        </verification>
+      </step>
+    </user_instructions>
+
+    <important_notes>
+      <note priority="critical">
+        The token must be set as an environment variable TECHZONE_API_TOKEN.
+        The mcp.json file uses ${TECHZONE_API_TOKEN} syntax to reference it.
+      </note>
+      <note priority="high">
+        Keep your environment variables secure. Do not commit actual tokens to repositories.
+        The mcp.json file is safe to share as it only contains the variable reference.
+      </note>
+      <note priority="medium">
+        Each user needs to set their own TECHZONE_API_TOKEN environment variable.
+        The mcp.json file can be shared safely with the ${TECHZONE_API_TOKEN} reference.
+      </note>
+    </important_notes>
+
+    <token_retrieval_behavior>
+      <title>How the Mode Retrieves the Token</title>
+      <description>
+        The mode automatically retrieves the token from available sources in this order:
+      </description>
+      <priority_order>
+        <source priority="1">
+          <method>Environment variable: $TECHZONE_API_TOKEN</method>
+          <retrieval>Use execute_command to read the environment variable</retrieval>
+          <example>execute_command: echo $TECHZONE_API_TOKEN</example>
+        </source>
+        <source priority="2">
+          <method>MCP settings file</method>
+          <locations>
+            <location>~/.bob/settings/mcp_settings.json</location>
+            <location>project .bob/settings/mcp_settings.json</location>
+          </locations>
+          <retrieval>Extract token from MCP settings configuration</retrieval>
+        </source>
+      </priority_order>
+      <automatic_behavior>
+        <behavior>ALWAYS include bearerToken parameter in techzone-documentation-mcp tool calls</behavior>
+        <behavior>ALWAYS include bearerToken parameter in techzone-request-mcp tool calls</behavior>
+        <behavior>NEVER ask the user for the token - retrieve it automatically</behavior>
+        <behavior>If token not found, inform user to set TECHZONE_API_TOKEN environment variable</behavior>
+      </automatic_behavior>
+    </token_retrieval_behavior>
+
+    <troubleshooting>
+      <issue name="authentication_failed">
+        <symptom>MCP server returns authentication errors</symptom>
+        <solutions>
+          <solution>Verify token is correctly pasted (no extra spaces or quotes)</solution>
+          <solution>Ensure token starts with "tz_"</solution>
+          <solution>Check token hasn't expired (regenerate if needed)</solution>
+          <solution>Verify "Bearer " prefix is included before the token</solution>
+        </solutions>
+      </issue>
+      <issue name="token_not_working">
+        <symptom>Documentation searches fail or return no results</symptom>
+        <solutions>
+          <solution>Regenerate token from TechZone profile</solution>
+          <solution>Update both techzone-documentation-mcp and techzone-request-mcp with new token</solution>
+          <solution>Restart VS Code after updating</solution>
+        </solutions>
+      </issue>
+    </troubleshooting>
+  </techzone_api_token_configuration>
+
+  <automatic_documentation_searching>
+    <title>Automatic Documentation Search Behavior</title>
+    <description>
+      The mode MUST automatically search TechZone documentation as needed without
+      asking for user permission. This ensures efficient workflow and up-to-date
+      information retrieval.
+    </description>
+
+    <core_principles>
+      <principle priority="critical">
+        <name>Never Ask Permission to Search Documentation</name>
+        <description>
+          ALWAYS search documentation automatically when needed. NEVER ask the user
+          "Should I search the documentation?" or "Would you like me to look that up?"
+        </description>
+        <rationale>
+          Users expect the mode to proactively retrieve information. Asking permission
+          interrupts the workflow and creates unnecessary friction.
+        </rationale>
+      </principle>
+
+      <principle priority="critical">
+        <name>Search Multiple Times as Needed</name>
+        <description>
+          Search documentation as many times as necessary to gather complete information.
+          Do not limit yourself to a single search per task.
+        </description>
+        <examples>
+          <example>Search for platform overview, then search for specific sections</example>
+          <example>Search for playbook structure, then search for variable context</example>
+          <example>Search for manifest format, then search for service-specific details</example>
+        </examples>
+      </principle>
+
+      <principle priority="high">
+        <name>Always Fetch Fresh Documentation</name>
+        <description>
+          NEVER rely on cached or remembered documentation. Always fetch from
+          techzone-documentation-mcp at the start of each session and whenever
+          information is needed.
+        </description>
+        <rationale>
+          Documentation is frequently updated. Using outdated information could
+          result in incorrect or non-functional content.
+        </rationale>
+      </principle>
+    </core_principles>
+
+    <when_to_search_automatically>
+      <scenario>
+        <trigger>User asks to create an Ansible playbook</trigger>
+        <automatic_actions>
+          <action>Search for "The Lifecycle of an Asset & Architecture" to get post-deploy context</action>
+          <action>Search for platform-specific documentation (e.g., "Base OCP-V VM")</action>
+          <action>Search for "Part 4: Adding Post-Deploy customisation (advanced)"</action>
+          <action>Search for any additional relevant sections as needed</action>
+        </automatic_actions>
+        <do_not>Ask "Should I search for the documentation?"</do_not>
+        <do_not>Ask "Would you like me to look up the playbook structure?"</do_not>
+      </scenario>
+
+      <scenario>
+        <trigger>User asks to create a manifest</trigger>
+        <automatic_actions>
+          <action>Search for platform-specific manifest documentation</action>
+          <action>Search for "Part 2: Building the Platform" or "Part 2: Building the manifest"</action>
+          <action>Search for service-specific configuration details if needed</action>
+        </automatic_actions>
+        <do_not>Ask permission before each search</do_not>
+      </scenario>
+
+      <scenario>
+        <trigger>User asks a how-to question</trigger>
+        <automatic_actions>
+          <action>Search for relevant documentation articles</action>
+          <action>Search for specific sections that address the question</action>
+          <action>Search for related topics if initial search doesn't provide complete answer</action>
+        </automatic_actions>
+        <do_not>Ask "Should I search the documentation for this?"</do_not>
+      </scenario>
+
+      <scenario>
+        <trigger>Information seems outdated or unclear</trigger>
+        <automatic_actions>
+          <action>Search documentation again to verify current information</action>
+          <action>Search for updated sections or new articles</action>
+        </automatic_actions>
+        <do_not>Rely on potentially outdated information</do_not>
+      </scenario>
+    </when_to_search_automatically>
+
+    <search_strategy>
+      <approach name="comprehensive">
+        <description>Search broadly first, then narrow down to specific sections</description>
+        <example>
+          1. Search for "watsonx SaaS Shared" to get overview
+          2. Search for "Part 4: Adding Post-Deploy customisation" for specific details
+          3. Search for "Instructions for generating Ansible Playbooks" for templates
+        </example>
+      </approach>
+
+      <approach name="iterative">
+        <description>Search multiple times to build complete understanding</description>
+        <example>
+          1. Search for platform documentation
+          2. Search for variable context
+          3. Search for examples
+          4. Search for troubleshooting if needed
+        </example>
+      </approach>
+
+      <approach name="verification">
+        <description>Search again to verify information before providing to user</description>
+        <example>
+          If unsure about a service name or configuration detail, search documentation
+          to confirm before including in generated content.
+        </example>
+      </approach>
+    </search_strategy>
+
+    <communication_guidelines>
+      <guideline>
+        <do>Inform user you're retrieving documentation: "Let me fetch the latest documentation..."</do>
+        <do>Mention what you're searching for: "Searching for watsonx SaaS Shared playbook structure..."</do>
+        <do>Indicate when you've found relevant information: "Found the platform-specific requirements..."</do>
+      </guideline>
+
+      <guideline>
+        <dont>Ask permission: "Should I search the documentation?"</dont>
+        <dont>Ask if they want you to look something up: "Would you like me to check the docs?"</dont>
+        <dont>Hesitate to search multiple times: Just do it automatically</dont>
+      </guideline>
+    </communication_guidelines>
+
+    <example_interactions>
+      <good_example>
+        <user_request>Create a playbook for OCPV VM to install DB2</user_request>
+        <mode_response>
+          Let me fetch the latest documentation for OCPV VM playbooks...
+          
+          [Automatically searches for:]
+          1. "The Lifecycle of an Asset & Architecture" - post-deploy context
+          2. "Base OCP-V VM" - platform documentation
+          3. "Part 4: Adding Post-Deploy customisation" - playbook structure
+          
+          [Then generates playbook based on retrieved information]
+        </mode_response>
+      </good_example>
+
+      <bad_example>
+        <user_request>Create a playbook for OCPV VM to install DB2</user_request>
+        <mode_response>
+          Should I search the documentation for OCPV VM playbook structure?
+          
+          [This is WRONG - never ask permission]
+        </mode_response>
+      </bad_example>
+
+      <good_example>
+        <user_request>How do I pass variables to my playbook?</user_request>
+        <mode_response>
+          Let me check the latest documentation on variable handling...
+          
+          [Automatically searches for variable context and examples]
+          
+          Based on the current documentation, here's how to pass variables...
+        </mode_response>
+      </good_example>
+    </example_interactions>
+  </automatic_documentation_searching>
+
+  <mcp_server_usage_patterns>
+    <pattern name="documentation_retrieval">
+      <server>techzone-documentation-mcp</server>
+      <use_for>
+        <item>Fetching platform-specific documentation</item>
+        <item>Retrieving playbook and manifest instructions</item>
+        <item>Getting post-deploy context information</item>
+        <item>Accessing how-to guides and best practices</item>
+      </use_for>
+      <frequency>As often as needed - no limits</frequency>
+    </pattern>
+
+    <pattern name="example_retrieval">
+      <server>techzone-request-mcp</server>
+      <use_for>
+        <item>Fetching example environment definitions</item>
+        <item>Getting platform-specific variable structures</item>
+        <item>Retrieving manifest examples</item>
+      </use_for>
+      <frequency>When examples would help answer questions or generate content</frequency>
+      <remember>Always filter sensitive data before displaying</remember>
+    </pattern>
+
+    <pattern name="github_operations">
+      <server>github</server>
+      <use_for>
+        <item>Publishing generated content to itz-content repositories</item>
+        <item>Creating branches and pull requests</item>
+        <item>Committing playbooks and manifests</item>
+      </use_for>
+      <frequency>When user requests to publish content</frequency>
+    </pattern>
+
+    <pattern name="s3_operations">
+      <server>s3</server>
+      <use_for>
+        <item>Accessing OADP backups</item>
+        <item>Storing/retrieving deployment artifacts</item>
+        <item>Managing content files</item>
+      </use_for>
+      <frequency>When user needs to work with S3 storage</frequency>
+    </pattern>
+  </mcp_server_usage_patterns>
+
+  <integration_with_workflow>
+    <workflow_step name="initialization">
+      <automatic_action>Fetch post-deploy context from documentation</automatic_action>
+      <automatic_action>Retrieve platform-specific documentation</automatic_action>
+      <no_permission_needed>true</no_permission_needed>
+    </workflow_step>
+
+    <workflow_step name="content_generation">
+      <automatic_action>Search for templates and examples</automatic_action>
+      <automatic_action>Verify service names and configurations</automatic_action>
+      <automatic_action>Check for updated best practices</automatic_action>
+      <no_permission_needed>true</no_permission_needed>
+    </workflow_step>
+
+    <workflow_step name="question_answering">
+      <automatic_action>Search relevant documentation sections</automatic_action>
+      <automatic_action>Retrieve examples if helpful</automatic_action>
+      <automatic_action>Cross-reference multiple sources</automatic_action>
+      <no_permission_needed>true</no_permission_needed>
+    </workflow_step>
+  </integration_with_workflow>
+
+  <performance_considerations>
+    <consideration>
+      <name>Search Efficiency</name>
+      <description>
+        While you should search as often as needed, try to be efficient by:
+        - Searching for broader topics first, then specific sections
+        - Combining related searches when possible
+        - Caching information within a single session (but not across sessions)
+      </description>
+    </consideration>
+
+    <consideration>
+      <name>User Experience</name>
+      <description>
+        Keep users informed about what you're doing:
+        - Mention when you're fetching documentation
+        - Indicate what you're searching for
+        - Show progress for multi-step searches
+      </description>
+    </consideration>
+  </performance_considerations>
+</mcp_configuration_rules>
+
+<!-- Made with Bob -->

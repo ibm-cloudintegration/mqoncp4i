@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<platform_mapping_reference>
+  <quick_reference>
+    <critical_instruction>
+      When user asks to "show me an example [platform] definition", "use the request MCP",
+      or "grab the platform definition", follow this process:
+      
+      1. Identify the platform name from user's request
+      2. Look up the platform_id in the <platform_mappings> section below
+      3. IMMEDIATELY call techzone-get-platform with that platform_id
+      4. DO NOT search documentation first - retrieve the platform directly
+      5. Use the bearerToken from environment (retrieved via token skill)
+    </critical_instruction>
+    
+    <tool_to_use>
+      <server_name>techzone-request-mcp</server_name>
+      <tool_name>techzone-get-platform</tool_name>
+      <required_parameters>
+        <platformId>From platform_mappings section below</platformId>
+        <bearerToken>From environment via token retrieval skill</bearerToken>
+      </required_parameters>
+    </tool_to_use>
+    
+    <example_workflow>
+      User says: "show me an example watsonx saas shared definition"
+      
+      Step 1: Identify platform = "watsonx SaaS Shared"
+      Step 2: Look in <platform_mappings> → find <platform_id>698df695447389112f155cea</platform_id>
+      Step 3: Call techzone-get-platform immediately with that ID
+      Step 4: Present filtered results to user
+    </example_workflow>
+  </quick_reference>
+
+  <overview>
+    <description>
+      This reference provides mappings between IBM Technology Zone platforms and their
+      corresponding platform IDs for retrieving example environment definitions via
+      techzone-request-mcp. These mappings are essential for the how-to question
+      workflow when examples are needed.
+    </description>
+    <usage>
+      Use these platform IDs with techzone-request-mcp to fetch example environment
+      definitions that demonstrate proper structure and configuration for each platform.
+    </usage>
+    <critical_reminder>
+      When displaying information from retrieved environment definitions, NEVER show
+      sensitive information such as API keys, deploy keys, account IDs, or user identifiers.
+      Platform IDs are internal identifiers - don't include them in user-facing responses.
+    </critical_reminder>
+  </overview>
+
+  <platform_mappings>
+    <mapping>
+      <platform_name>watsonx SaaS Shared</platform_name>
+      <platform_id>698df695447389112f155cea</platform_id>
+      <description>
+        Shared watsonx.ai, watsonx.data, and watsonx.governance services in a
+        multi-tenant environment
+      </description>
+      <post_deploy_type>Terraform GitOps Post-Deploy</post_deploy_type>
+      <use_cases>
+        <use_case>watsonx.ai Studio and Runtime deployments</use_case>
+        <use_case>watsonx.data intelligence catalog</use_case>
+        <use_case>watsonx.governance deployments</use_case>
+        <use_case>Shared service demonstrations and training</use_case>
+      </use_cases>
+      <example_shows>
+        <item>Manifest structure with services, access, authorizations, and idp sections</item>
+        <item>Service definitions with programmatic names</item>
+        <item>Access policy configurations</item>
+        <item>Post-deploy playbook integration</item>
+      </example_shows>
+    </mapping>
+
+    <mapping>
+      <platform_name>Account Vending</platform_name>
+      <platform_id>69a84bbe7b3b025046a449a0</platform_id>
+      <description>
+        IBM Cloud account provisioning with pre-configured services, access policies,
+        and identity providers
+      </description>
+      <post_deploy_type>Terraform GitOps Post-Deploy</post_deploy_type>
+      <use_cases>
+        <use_case>Provisioning dedicated IBM Cloud accounts</use_case>
+        <use_case>Setting up access groups and IAM policies</use_case>
+        <use_case>Configuring identity providers</use_case>
+        <use_case>Multi-service environment provisioning</use_case>
+      </use_cases>
+      <example_shows>
+        <item>Manifest structure for account provisioning</item>
+        <item>Service definitions and access policies</item>
+        <item>Service-to-service authorizations</item>
+        <item>IdP configuration</item>
+        <item>Post-deploy playbook with variable parsing</item>
+      </example_shows>
+    </mapping>
+
+    <mapping>
+      <platform_name>OCPV Multi-VM (Windows + RHEL)</platform_name>
+      <platform_id>6998749ca2748c38f7e5094f</platform_id>
+      <description>
+        OpenShift Virtualization multi-VM deployment with Windows and RHEL VMs
+      </description>
+      <post_deploy_type>Terraform OS Post-Deploy</post_deploy_type>
+      <use_cases>
+        <use_case>Mixed OS environment testing</use_case>
+        <use_case>Windows and Linux integration scenarios</use_case>
+        <use_case>Cross-platform application development</use_case>
+      </use_cases>
+      <example_shows>
+        <item>Multi-VM manifest structure</item>
+        <item>VM specifications for different OS types</item>
+        <item>Network and storage configuration</item>
+        <item>Post-deploy playbook for VM customization</item>
+      </example_shows>
+    </mapping>
+
+    <mapping>
+      <platform_name>OCPV Multi-VM (RHEL + RHEL)</platform_name>
+      <platform_id>69951cb48c5fe9ad3b71636d</platform_id>
+      <description>
+        OpenShift Virtualization multi-VM deployment with multiple RHEL VMs
+      </description>
+      <post_deploy_type>Terraform OS Post-Deploy</post_deploy_type>
+      <use_cases>
+        <use_case>Multi-tier application deployment</use_case>
+        <use_case>Distributed system testing</use_case>
+        <use_case>Load balancing and clustering scenarios</use_case>
+      </use_cases>
+      <example_shows>
+        <item>Multi-VM manifest with same OS type</item>
+        <item>Different VM roles and configurations</item>
+        <item>Inter-VM networking setup</item>
+        <item>Post-deploy playbook for multi-VM orchestration</item>
+      </example_shows>
+    </mapping>
+
+    <mapping>
+      <platform_name>OCPV Single VM</platform_name>
+      <platform_id>69863a6e1454284d08e4dc45</platform_id>
+      <description>
+        OpenShift Virtualization single VM deployment
+      </description>
+      <post_deploy_type>Terraform OS Post-Deploy</post_deploy_type>
+      <use_cases>
+        <use_case>Single VM with custom software installation</use_case>
+        <use_case>Development and testing environments</use_case>
+        <use_case>Simple application deployments</use_case>
+      </use_cases>
+      <example_shows>
+        <item>Single VM environment definition structure</item>
+        <item>VM specifications and configuration</item>
+        <item>Post-deploy playbook for software installation</item>
+        <item>Variable passing from environment to playbook</item>
+      </example_shows>
+    </mapping>
+
+    <mapping>
+      <platform_name>VPC Single VM</platform_name>
+      <platform_id>698b6823ba9caef5257425da</platform_id>
+      <description>
+        IBM Cloud VPC-based single virtual machine deployment
+      </description>
+      <post_deploy_type>Terraform OS Post-Deploy</post_deploy_type>
+      <use_cases>
+        <use_case>Alternative to OCPV for VM deployments</use_case>
+        <use_case>IBM Cloud VPC-specific requirements</use_case>
+        <use_case>VPC networking scenarios</use_case>
+      </use_cases>
+      <example_shows>
+        <item>VPC VM environment definition structure</item>
+        <item>VPC-specific configuration</item>
+        <item>Post-deploy playbook for VPC VMs</item>
+        <item>VPC networking and security group setup</item>
+      </example_shows>
+    </mapping>
+
+    <mapping>
+      <platform_name>VPC Multi-VM</platform_name>
+      <platform_id>69aefa4928d4f9a43cabe77b</platform_id>
+      <description>
+        IBM Cloud VPC-based multi-VM deployment with manifest-driven provisioning
+      </description>
+      <post_deploy_type>Terraform OS Post-Deploy and Container Post-Deploy</post_deploy_type>
+      <use_cases>
+        <use_case>Multi-VM deployments in IBM Cloud VPC</use_case>
+        <use_case>Mixed OS environments (Linux, Windows)</use_case>
+        <use_case>Shared or dedicated VPC infrastructure</use_case>
+        <use_case>Pattern-level orchestration across VMs</use_case>
+      </use_cases>
+      <example_shows>
+        <item>VPC manifest structure with infrastructure and VM definitions</item>
+        <item>Shared and create mode configurations</item>
+        <item>Per-VM and pattern-level post-deploy automation</item>
+        <item>Security group and networking setup</item>
+        <item>DNS registration and storage configuration</item>
+      </example_shows>
+    </mapping>
+
+    <mapping>
+      <platform_name>OpenShift Deployer</platform_name>
+      <platform_id>699dffc98f8827063aa64ee3</platform_id>
+      <description>
+        OpenShift cluster with GitOps-based post-deployer module
+      </description>
+      <post_deploy_type>Terraform Post-Deployer</post_deploy_type>
+      <use_cases>
+        <use_case>Installing operators and applications on OpenShift</use_case>
+        <use_case>Configuring cluster resources</use_case>
+        <use_case>Setting up GitOps workflows</use_case>
+        <use_case>ArgoCD-based deployments</use_case>
+      </use_cases>
+      <example_shows>
+        <item>OpenShift cluster environment definition</item>
+        <item>Post-deployer configuration</item>
+        <item>GitOps repository integration</item>
+        <item>ArgoCD application definitions</item>
+      </example_shows>
+    </mapping>
+  </platform_mappings>
+
+  <usage_guidelines>
+    <guideline priority="CRITICAL">
+      <name>Filter Sensitive Information</name>
+      <description>
+        When retrieving and displaying information from example environment definitions,
+        you MUST filter out all sensitive information before showing it to the user.
+      </description>
+      <sensitive_fields_to_filter>
+        <field>API keys (any field containing "api_key", "apikey", "token")</field>
+        <field>Deploy keys (any field containing "deploy_key", "ssh_key")</field>
+        <field>Account IDs (any field containing "account_id", "crn")</field>
+        <field>User identifiers (any field containing "user_id", "email", "ibmid")</field>
+        <field>Passwords or secrets (any field containing "password", "secret")</field>
+      </sensitive_fields_to_filter>
+      <replacement_strategy>
+        Replace sensitive values with placeholders like:
+        - [API_KEY] or [REDACTED]
+        - [DEPLOY_KEY] or [REDACTED]
+        - [ACCOUNT_ID] or [REDACTED]
+        - [USER_ID] or [REDACTED]
+      </replacement_strategy>
+    </guideline>
+
+    <guideline priority="HIGH">
+      <name>Extract Relevant Portions Only</name>
+      <description>
+        Don't display the entire environment definition. Extract and show only the
+        portions relevant to answering the user's question.
+      </description>
+      <examples>
+        <example>
+          If user asks about post-deploy variables, show only the post_deploy_variables
+          section with sensitive data filtered.
+        </example>
+        <example>
+          If user asks about manifest structure, show only the manifest section with
+          service names and structure, not the entire definition.
+        </example>
+      </examples>
+    </guideline>
+
+    <guideline priority="HIGH">
+      <name>Explain the Structure</name>
+      <description>
+        When showing examples, explain what each part does and how it fits into
+        the overall environment definition.
+      </description>
+    </guideline>
+
+    <guideline priority="MEDIUM">
+      <name>Reference Documentation</name>
+      <description>
+        Always reference the official documentation alongside examples to provide
+        complete context.
+      </description>
+    </guideline>
+  </usage_guidelines>
+
+  <retrieval_workflow>
+    <critical_rule>
+      When user explicitly asks to "use the request MCP", "show me an example [platform]",
+      or "grab the platform definition", skip documentation searches and go DIRECTLY to
+      fetching the platform using the platform_id from the <platform_mappings> section.
+    </critical_rule>
+    
+    <step number="1">
+      <title>Identify Platform</title>
+      <description>
+        Determine which platform the user is asking about.
+      </description>
+      <examples>
+        <example>User says "watsonx SaaS Shared" → platform_name = "watsonx SaaS Shared"</example>
+        <example>User says "Account Vending" → platform_name = "Account Vending"</example>
+        <example>User says "OCPV Multi-VM" → platform_name = "OCPV Multi-VM"</example>
+      </examples>
+    </step>
+
+    <step number="2">
+      <title>Look Up Platform ID</title>
+      <description>
+        Find the platform_id in the <platform_mappings> section of this file.
+        Each mapping has a <platform_id> element containing the ID to use.
+      </description>
+      <example>
+        For "watsonx SaaS Shared", find the mapping and extract:
+        <platform_id>698df695447389112f155cea</platform_id>
+      </example>
+    </step>
+
+    <step number="3">
+      <title>Fetch Example Using techzone-get-platform</title>
+      <description>
+        Use techzone-request-mcp with techzone-get-platform tool and the platform_id.
+        Include bearerToken retrieved from environment.
+      </description>
+      <mcp_server>techzone-request-mcp</mcp_server>
+      <tool_name>techzone-get-platform</tool_name>
+      <required_parameters>
+        <platformId>The platform_id from step 2</platformId>
+        <bearerToken>Retrieved from environment via token skill</bearerToken>
+      </required_parameters>
+      <example_call>
+        <![CDATA[
+<use_mcp_tool>
+<server_name>techzone-request-mcp</server_name>
+<tool_name>techzone-get-platform</tool_name>
+<arguments>
+{
+  "platformId": "[platform_id from platform_mappings]",
+  "bearerToken": "[token from environment]"
+}
+</arguments>
+</use_mcp_tool>
+        ]]>
+      </example_call>
+    </step>
+
+    <step number="4">
+      <title>Filter Sensitive Data</title>
+      <description>
+        Before displaying any information, filter out all sensitive data according
+        to the security rules.
+      </description>
+      <critical>This step is MANDATORY and cannot be skipped</critical>
+    </step>
+
+    <step number="5">
+      <title>Extract Relevant Portions</title>
+      <description>
+        Extract only the portions of the environment definition that are relevant
+        to answering the user's question.
+      </description>
+    </step>
+
+    <step number="6">
+      <title>Present Information</title>
+      <description>
+        Present the filtered, relevant information with explanation and context.
+        Build clear examples from the retrieved content.
+      </description>
+    </step>
+  </retrieval_workflow>
+
+  <example_usage_scenarios>
+    <scenario>
+      <user_question>How do I structure my watsonx SaaS Shared manifest?</user_question>
+      <platform>watsonx SaaS Shared</platform>
+      <platform_id>698df695447389112f155cea</platform_id>
+      <retrieval_approach>
+        <step>Fetch example using platform ID</step>
+        <step>Search documentation for manifest structure</step>
+        <step>Extract manifest section</step>
+        <step>Filter any sensitive data (API keys, account IDs)</step>
+        <step>Show manifest structure with services, access, authorizations, idp</step>
+        <step>Explain each section's purpose</step>
+      </retrieval_approach>
+    </scenario>
+
+    <scenario>
+      <user_question>What variables are available in my OCPV VM playbook?</user_question>
+      <platform>OCPV Single VM</platform>
+      <platform_id>69863a6e1454284d08e4dc45</platform_id>
+      <retrieval_approach>
+        <step>Fetch example using platform ID</step>
+        <step>Search documentation for post-deploy context</step>
+        <step>Extract post_deploy_variables section</step>
+        <step>Filter any sensitive data</step>
+        <step>Show variable structure and types</step>
+        <step>Explain how variables are passed to playbook</step>
+      </retrieval_approach>
+    </scenario>
+
+    <scenario>
+      <user_question>How do I configure multiple VMs with different roles?</user_question>
+      <platform>OCPV Multi-VM (RHEL + RHEL)</platform>
+      <platform_id>69951cb48c5fe9ad3b71636d</platform_id>
+      <retrieval_approach>
+        <step>Fetch example using platform ID</step>
+        <step>Search documentation for Multi-VM patterns</step>
+        <step>Extract manifest section showing VM definitions</step>
+        <step>Filter any sensitive data</step>
+        <step>Show how multiple VMs are defined with different specs</step>
+        <step>Explain VM naming and role assignment</step>
+      </retrieval_approach>
+    </scenario>
+  </example_usage_scenarios>
+
+  <platform_selection_guidance>
+    <rule>
+      <condition>User asks about VM deployments without specifying platform</condition>
+      <recommendation>Recommend OCPV as primary option, mention VPC as alternative</recommendation>
+      <rationale>OCPV is the preferred platform for VM deployments in IBM Technology Zone</rationale>
+    </rule>
+
+    <rule>
+      <condition>User asks about Multi-VM without specifying OS combination</condition>
+      <recommendation>Ask if they need mixed OS (Windows + RHEL) or same OS (RHEL + RHEL)</recommendation>
+      <platform_ids>
+        <windows_rhel>6998749ca2748c38f7e5094f</windows_rhel>
+        <rhel_rhel>69951cb48c5fe9ad3b71636d</rhel_rhel>
+      </platform_ids>
+    </rule>
+
+    <rule>
+      <condition>User asks about IBM Cloud services</condition>
+      <recommendation>Determine if they need shared services (watsonx SaaS) or dedicated account (Account Vending)</recommendation>
+      <platform_ids>
+        <watsonx_saas>698df695447389112f155cea</watsonx_saas>
+        <account_vending>69a84bbe7b3b025046a449a0</account_vending>
+      </platform_ids>
+    </rule>
+  </platform_selection_guidance>
+
+  <maintenance_notes>
+    <note>
+      These platform IDs are current as of the mode creation. If platform IDs change
+      or new platforms are added, this reference should be updated.
+    </note>
+    <note>
+      Always verify that the retrieved example is current and matches the expected
+      platform before using it to answer questions.
+    </note>
+    <note>
+      If a platform ID returns an error or unexpected data, inform the user and
+      rely on documentation instead of examples.
+    </note>
+  </maintenance_notes>
+</platform_mapping_reference>
+
+<!-- Made with Bob -->

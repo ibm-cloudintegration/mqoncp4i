@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<platform_guidance>
+  <overview>
+    <description>
+      IBM Technology Zone supports multiple infrastructure platforms, each with specific
+      post-deploy contexts, variable structures, and content module types. This guide
+      provides platform-specific guidance for creating Ansible playbooks and manifests.
+    </description>
+    <critical_principle>
+      The platform determines which infrastructure and request variables are available
+      in post-deploy playbooks. Always fetch the latest post-deploy context from
+      techzone-documentation-mcp under "The Lifecycle of an Asset & Architecture"
+      section "Types of Content Modules".
+    </critical_principle>
+  </overview>
+
+  <platform_categories>
+    <category name="IBM Cloud Services">
+      <description>
+        SaaS-based IBM Cloud services that share the same post-deploy infrastructure
+      </description>
+      <post_deploy_type>Terraform GitOps Post-Deploy</post_deploy_type>
+      <platforms>
+        <platform>
+          <name>watsonx SaaS Shared</name>
+          <description>Shared watsonx.ai, watsonx.data, and watsonx.governance services</description>
+          <use_cases>
+            <use_case>watsonx.ai Studio and Runtime deployments</use_case>
+            <use_case>watsonx.data intelligence catalog</use_case>
+            <use_case>watsonx.governance deployments</use_case>
+          </use_cases>
+        </platform>
+        <platform>
+          <name>Account Vending</name>
+          <description>IBM Cloud account provisioning with services</description>
+          <use_cases>
+            <use_case>Provisioning IBM Cloud accounts with pre-configured services</use_case>
+            <use_case>Setting up access groups and IAM policies</use_case>
+            <use_case>Configuring identity providers</use_case>
+          </use_cases>
+        </platform>
+      </platforms>
+      <shared_characteristics>
+        <characteristic>Same post-deploy variable structure</characteristic>
+        <characteristic>Access to IBM Cloud API and CLI</characteristic>
+        <characteristic>Service instance variables available</characteristic>
+        <characteristic>Account-level authentication context</characteristic>
+      </shared_characteristics>
+    </category>
+
+    <category name="Base VMs">
+      <description>
+        Virtual machine deployments that share the same post-deploy infrastructure
+      </description>
+      <post_deploy_type>Terraform OS Post-Deploy</post_deploy_type>
+      <platforms>
+        <platform>
+          <name>OCPV Base VM Single and Multi-VM</name>
+          <description>OpenShift Virtualization-based VMs on IBM Cloud</description>
+          <use_cases>
+            <use_case>Single VM deployments with custom software</use_case>
+            <use_case>Multi-VM architectures (e.g., Windows + RHEL, RHEL + RHEL)</use_case>
+            <use_case>Development and testing environments</use_case>
+          </use_cases>
+          <priority>Primary choice for VM-based deployments</priority>
+        </platform>
+        <platform>
+          <name>IBM Cloud Base VPC VM</name>
+          <description>IBM Cloud VPC-based virtual machines</description>
+          <use_cases>
+            <use_case>Alternative to OCPV for VM deployments</use_case>
+            <use_case>IBM Cloud VPC-specific requirements</use_case>
+          </use_cases>
+          <priority>Alternative option when OCPV is not suitable</priority>
+        </platform>
+      </platforms>
+      <shared_characteristics>
+        <characteristic>Same post-deploy variable structure</characteristic>
+        <characteristic>Direct VM access via SSH</characteristic>
+        <characteristic>Cloud-Init execution context</characteristic>
+        <characteristic>Infrastructure variables (IP, hostname, etc.)</characteristic>
+      </shared_characteristics>
+    </category>
+
+    <category name="OpenShift Clusters">
+      <description>
+        OpenShift cluster deployments with post-deployer module
+      </description>
+      <post_deploy_type>Terraform Post-Deployer</post_deploy_type>
+      <platforms>
+        <platform>
+          <name>OpenShift with Post-Deployer</name>
+          <description>OpenShift clusters with GitOps-based post-deployment</description>
+          <use_cases>
+            <use_case>Installing operators and applications</use_case>
+            <use_case>Configuring cluster resources</use_case>
+            <use_case>Setting up GitOps workflows</use_case>
+          </use_cases>
+        </platform>
+      </platforms>
+      <characteristics>
+        <characteristic>GitOps-based deployment model</characteristic>
+        <characteristic>Access to OpenShift API and CLI</characteristic>
+        <characteristic>Cluster-level variables available</characteristic>
+        <characteristic>ArgoCD integration</characteristic>
+      </characteristics>
+    </category>
+  </platform_categories>
+
+  <variable_contexts>
+    <context platform="IBM Cloud Services">
+      <description>
+        Variables available in Terraform GitOps Post-Deploy playbooks for
+        watsonx SaaS Shared and Account Vending platforms
+      </description>
+      <variable_categories>
+        <category name="account_variables">
+          <description>IBM Cloud account information</description>
+          <variables>
+            <variable>account_api_key - IBM Cloud API key for authentication</variable>
+            <variable>account_name - Human-readable account name</variable>
+            <variable>account_id - IBM Cloud account ID</variable>
+          </variables>
+        </category>
+        <category name="environment_variables">
+          <description>Environment-specific settings</description>
+          <variables>
+            <variable>requester_id - User ID of the requester</variable>
+            <variable>environment_id - Unique environment identifier</variable>
+            <variable>region - IBM Cloud region</variable>
+          </variables>
+        </category>
+        <category name="service_instance_variables">
+          <description>Provisioned service details</description>
+          <variables>
+            <variable>service_name - Name of provisioned service</variable>
+            <variable>service_id - Service instance ID</variable>
+            <variable>service_crn - Cloud Resource Name</variable>
+          </variables>
+        </category>
+        <category name="group_variables">
+          <description>Access group information</description>
+          <variables>
+            <variable>group_name - Access group name</variable>
+            <variable>access_group_id - Group identifier</variable>
+          </variables>
+        </category>
+      </variable_categories>
+      <access_pattern>
+        <description>Variables are passed as JSON strings that must be parsed</description>
+        <example><![CDATA[
+# Parse account variables
+- name: Parse account variables
+  set_fact:
+    account_json: "{{ account_variables | from_json }}"
+
+# Access specific values
+- name: Use account API key
+  set_fact:
+    api_key: "{{ account_json['account_api_key'] }}"
+        ]]></example>
+      </access_pattern>
+    </context>
+
+    <context platform="Base VMs">
+      <description>
+        Variables available in Terraform OS Post-Deploy playbooks for
+        OCPV and VPC VM platforms
+      </description>
+      <variable_categories>
+        <category name="infrastructure_variables">
+          <description>VM infrastructure details</description>
+          <variables>
+            <variable>vm_ip_address - IP address of the VM</variable>
+            <variable>vm_hostname - Hostname of the VM</variable>
+            <variable>resource_group_name - IBM Cloud resource group</variable>
+            <variable>instance_name - VM instance name</variable>
+          </variables>
+        </category>
+        <category name="request_variables">
+          <description>Reservation request data</description>
+          <variables>
+            <variable>requester_id - User ID of the requester</variable>
+            <variable>reservation_id - Unique reservation identifier</variable>
+            <variable>custom_variables - User-provided variables</variable>
+          </variables>
+        </category>
+        <category name="authentication_variables">
+          <description>Access credentials</description>
+          <variables>
+            <variable>api_key - IBM Cloud API key</variable>
+            <variable>ssh_key - SSH public key for access</variable>
+          </variables>
+        </category>
+      </variable_categories>
+      <access_pattern>
+        <description>Variables are directly available in playbook context</description>
+        <example><![CDATA[
+# Variables are passed directly from environment override
+vars:
+  custom_variable: "{{ custom_variable }}"
+  
+# Use in tasks
+- name: Display VM information
+  debug:
+    msg: "VM IP: {{ vm_ip_address }}, Hostname: {{ vm_hostname }}"
+        ]]></example>
+      </access_pattern>
+    </context>
+
+    <context platform="OpenShift Clusters">
+      <description>
+        Variables available in Terraform Post-Deployer playbooks for
+        OpenShift cluster deployments
+      </description>
+      <variable_categories>
+        <category name="cluster_variables">
+          <description>OpenShift cluster information</description>
+          <variables>
+            <variable>cluster_name - Name of the OpenShift cluster</variable>
+            <variable>cluster_id - Unique cluster identifier</variable>
+            <variable>cluster_api_url - OpenShift API endpoint</variable>
+            <variable>cluster_console_url - Web console URL</variable>
+          </variables>
+        </category>
+        <category name="authentication_variables">
+          <description>Cluster access credentials</description>
+          <variables>
+            <variable>kubeconfig - Kubernetes configuration</variable>
+            <variable>admin_token - Admin authentication token</variable>
+          </variables>
+        </category>
+        <category name="gitops_variables">
+          <description>GitOps configuration</description>
+          <variables>
+            <variable>git_repo_url - GitOps repository URL</variable>
+            <variable>git_branch - Target branch</variable>
+            <variable>argocd_namespace - ArgoCD namespace</variable>
+          </variables>
+        </category>
+      </variable_categories>
+    </context>
+  </variable_contexts>
+
+  <platform_selection_guidance>
+    <rule priority="1">
+      <condition>User needs VM-based deployment</condition>
+      <recommendation>Recommend OCPV Base VM as primary option</recommendation>
+      <rationale>OCPV is the preferred platform for VM deployments in IBM Technology Zone</rationale>
+      <alternative>Offer IBM Cloud Base VPC VM as alternative if OCPV doesn't meet requirements</alternative>
+    </rule>
+    
+    <rule priority="2">
+      <condition>User needs IBM Cloud services (watsonx, Watson, etc.)</condition>
+      <recommendation>Determine if watsonx SaaS Shared or Account Vending is appropriate</recommendation>
+      <rationale>watsonx SaaS Shared for shared services, Account Vending for dedicated accounts</rationale>
+    </rule>
+    
+    <rule priority="3">
+      <condition>User needs OpenShift cluster with applications</condition>
+      <recommendation>Use OpenShift with Post-Deployer</recommendation>
+      <rationale>Post-Deployer provides GitOps-based application deployment</rationale>
+    </rule>
+    
+    <rule priority="4">
+      <condition>Platform is unclear from user request</condition>
+      <action>Use ask_followup_question to clarify</action>
+      <options>
+        <option>IBM Cloud Services (watsonx, Watson, Cloud services)</option>
+        <option>Virtual Machines (single or multi-VM)</option>
+        <option>OpenShift Cluster with applications</option>
+      </options>
+    </rule>
+  </platform_selection_guidance>
+
+  <documentation_retrieval_strategy>
+    <step number="1">
+      <title>Fetch Post-Deploy Context</title>
+      <action>
+        Use techzone-documentation-mcp to fetch "The Lifecycle of an Asset & Architecture"
+        section "Types of Content Modules" to get current post-deploy context for all platforms
+      </action>
+      <frequency>Every session - never cache this information</frequency>
+    </step>
+    
+    <step number="2">
+      <title>Fetch Platform-Specific Documentation</title>
+      <action>
+        Based on identified platform, fetch the specific documentation articles
+        listed in the workflow instructions
+      </action>
+      <critical>Always fetch Part 4: Adding Post-Deploy customisation (advanced)</critical>
+    </step>
+    
+    <step number="3">
+      <title>Fetch Additional Instructions</title>
+      <action>
+        Retrieve platform-specific instruction articles (e.g., "Instructions for
+        generating Ansible Playbooks for IBM Cloud Services")
+      </action>
+    </step>
+  </documentation_retrieval_strategy>
+
+  <common_patterns>
+    <pattern name="multi_vm_configuration">
+      <platforms>OCPV Multi-VM</platforms>
+      <description>
+        Multi-VM deployments require manifest configuration to define VM specifications
+      </description>
+      <example_configurations>
+        <configuration>Windows + RHEL (different OS types)</configuration>
+        <configuration>RHEL + RHEL (same OS, different configurations)</configuration>
+        <configuration>Multiple VMs with different roles (web, database, app)</configuration>
+      </example_configurations>
+    </pattern>
+    
+    <pattern name="service_provisioning">
+      <platforms>watsonx SaaS Shared, Account Vending</platforms>
+      <description>
+        Service provisioning requires manifest with service definitions, access policies,
+        and optional service authorizations
+      </description>
+      <key_sections>
+        <section>services - Define IBM Cloud services to provision</section>
+        <section>access - Configure IAM access policies</section>
+        <section>authorizations - Set up service-to-service authorizations</section>
+        <section>idp - Configure identity provider settings</section>
+      </key_sections>
+    </pattern>
+    
+    <pattern name="post_deploy_customization">
+      <platforms>All platforms</platforms>
+      <description>
+        Post-deploy playbooks customize environments after initial provisioning
+      </description>
+      <common_tasks>
+        <task>Installing additional software</task>
+        <task>Configuring services</task>
+        <task>Setting up users and permissions</task>
+        <task>Applying custom configurations</task>
+        <task>Generating post-deploy output for users</task>
+      </common_tasks>
+    </pattern>
+  </common_patterns>
+
+  <best_practices>
+    <practice category="platform_identification">
+      <rule>Always confirm platform before generating content</rule>
+      <rule>Use ask_followup_question if platform is ambiguous</rule>
+      <rule>Explain platform differences when presenting options</rule>
+    </practice>
+    
+    <practice category="documentation_usage">
+      <rule>Fetch documentation at start of every session</rule>
+      <rule>Never rely on cached or remembered documentation</rule>
+      <rule>Reference specific documentation sections in responses</rule>
+      <rule>Inform user if documentation structure has changed</rule>
+    </practice>
+    
+    <practice category="variable_handling">
+      <rule>Use platform-appropriate variable access patterns</rule>
+      <rule>Include variable parsing for IBM Cloud Services platforms</rule>
+      <rule>Use direct variable access for Base VM platforms</rule>
+      <rule>Always validate variable availability before use</rule>
+    </practice>
+  </best_practices>
+
+  <platform_selection_decision_tree>
+    <title>Platform Selection Decision Tree</title>
+    <description>
+      Use this decision tree to help users select the appropriate platform for their needs.
+    </description>
+    <question>What type of deployment is needed?</question>
+    <branches>
+      <branch name="IBM Cloud Services">
+        <question>Shared services or dedicated account?</question>
+        <options>
+          <option name="Shared services">
+            <platform>watsonx SaaS Shared</platform>
+            <platform_id>698df695447389112f155cea</platform_id>
+          </option>
+          <option name="Dedicated account">
+            <platform>Account Vending</platform>
+            <platform_id>69a84bbe7b3b025046a449a0</platform_id>
+          </option>
+        </options>
+      </branch>
+      <branch name="Virtual Machines">
+        <question>Multiple VMs or single VM?</question>
+        <options>
+          <option name="Multiple VMs">
+            <question>Windows + RHEL or RHEL + RHEL?</question>
+            <suboptions>
+              <suboption name="Windows + RHEL">
+                <platform>OCPV Multi VM Windows/RHEL</platform>
+                <platform_id>6998749ca2748c38f7e5094f</platform_id>
+              </suboption>
+              <suboption name="RHEL + RHEL">
+                <platform>OCPV Multi VM RHEL/RHEL</platform>
+                <platform_id>69951cb48c5fe9ad3b71636d</platform_id>
+              </suboption>
+            </suboptions>
+          </option>
+          <option name="Single VM">
+            <question>OCPV platform or VPC platform?</question>
+            <suboptions>
+              <suboption name="OCPV platform (recommended)">
+                <platform>OCPV Single VM</platform>
+                <platform_id>69863a6e1454284d08e4dc45</platform_id>
+              </suboption>
+              <suboption name="VPC platform">
+                <platform>VPC Single VM</platform>
+                <platform_id>698b6823ba9caef5257425da</platform_id>
+              </suboption>
+            </suboptions>
+          </option>
+        </options>
+      </branch>
+      <branch name="OpenShift Cluster">
+        <question>With applications?</question>
+        <options>
+          <option name="Yes">
+            <platform>OpenShift Deployer</platform>
+            <platform_id>699dffc98f8827063aa64ee3</platform_id>
+          </option>
+        </options>
+      </branch>
+    </branches>
+  </platform_selection_decision_tree>
+
+  <example_environment_retrieval_restrictions>
+    <title>CRITICAL: Example Environment Retrieval Restrictions</title>
+    <description>
+      When retrieving example environment definitions using techzone-request-mcp,
+      you MUST use ONLY the specific platform IDs based on the platform type.
+      NO OTHER SEARCHES should be performed outside these fixed platform IDs.
+    </description>
+    <critical_rules>
+      <rule priority="CRITICAL">ONLY use the seven fixed platform IDs listed in 7_platform_mapping.xml</rule>
+      <rule priority="CRITICAL">DO NOT search by request name, title, description, or any other criteria</rule>
+      <rule priority="CRITICAL">DO NOT use wildcards, partial matches, or multiple platform IDs</rule>
+      <rule priority="CRITICAL">DO NOT attempt to list all requests without a platform_id</rule>
+    </critical_rules>
+    <allowed_operations>
+      <operation>Search with exactly one of the seven fixed platform_id values</operation>
+      <operation>Use limit parameter to control result count (optional)</operation>
+    </allowed_operations>
+    <forbidden_operations>
+      <operation>Searching by name or title</operation>
+      <operation>Searching by description or keywords</operation>
+      <operation>Searching by owner or creator</operation>
+      <operation>Searching by date or status</operation>
+      <operation>Using any search parameters other than platform_id</operation>
+    </forbidden_operations>
+  </example_environment_retrieval_restrictions>
+</platform_guidance>
+
+<!-- Made with Bob -->

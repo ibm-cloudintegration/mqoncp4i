@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mandatory_token_retrieval_workflow>
+  <priority>CRITICAL - HIGHEST PRIORITY RULE</priority>
+  <execution_order>FIRST - Execute BEFORE any other workflow step</execution_order>
+  
+  <critical_instruction>
+    BEFORE making ANY use_mcp_tool call to TechZone or GitHub MCP servers, you MUST retrieve tokens:
+    
+    FOR TECHZONE MCP (techzone-documentation-mcp, techzone-request-mcp, techzone-environment-mcp):
+    1. Check environment variable: echo $TECHZONE_API_TOKEN
+    2. If empty, read .bob/mcp.json and extract token from Authorization header
+    3. Remove "Bearer " prefix from token value
+    4. Use the actual retrieved token in the bearerToken parameter
+    
+    FOR GITHUB MCP (github):
+    1. Check environment variable: echo $GITHUB_PERSONAL_ACCESS_TOKEN
+    2. If empty, read .bob/mcp.json and check github.env.GITHUB_PERSONAL_ACCESS_TOKEN
+    3. Verify token is configured (GitHub MCP uses it from environment, not as parameter)
+    
+    DO NOT make MCP calls with placeholder tokens.
+    DO NOT skip token retrieval.
+    DO NOT ask user for token in chat.
+  </critical_instruction>
+
+  <applies_to>
+    <techzone_servers>
+      <server>techzone-documentation-mcp</server>
+      <server>techzone-request-mcp</server>
+      <server>techzone-environment-mcp</server>
+    </techzone_servers>
+    <github_server>
+      <server>github</server>
+    </github_server>
+  </applies_to>
+
+  <token_retrieval_steps>
+    <techzone_token>
+      <step_1>
+        <action>Check environment variable first</action>
+        <command>echo $TECHZONE_API_TOKEN</command>
+        <tool>execute_command</tool>
+      </step_1>
+      <step_2>
+        <action>If environment variable is empty, read .bob/mcp.json</action>
+        <path>.bob/mcp.json</path>
+        <tool>read_file</tool>
+        <extract>Find "Authorization": "Bearer [token]" in server configuration</extract>
+      </step_2>
+      <step_3>
+        <action>Extract token value only (remove "Bearer " prefix)</action>
+      </step_3>
+      <step_4>
+        <action>Use actual token in bearerToken parameter of MCP call</action>
+      </step_4>
+    </techzone_token>
+    
+    <github_token>
+      <step_1>
+        <action>Check environment variable first</action>
+        <command>echo $GITHUB_PERSONAL_ACCESS_TOKEN</command>
+        <tool>execute_command</tool>
+      </step_1>
+      <step_2>
+        <action>If environment variable is empty, read .bob/mcp.json</action>
+        <path>.bob/mcp.json</path>
+        <tool>read_file</tool>
+        <extract>Check github.env.GITHUB_PERSONAL_ACCESS_TOKEN configuration</extract>
+      </step_2>
+      <step_3>
+        <action>Verify token is configured</action>
+        <note>GitHub MCP uses token from environment, not as a parameter</note>
+      </step_3>
+    </github_token>
+  </token_retrieval_steps>
+
+  <behavioral_rules>
+    <rule priority="CRITICAL">NEVER make use_mcp_tool calls to TechZone or GitHub servers without retrieving token first</rule>
+    <rule priority="CRITICAL">NEVER use placeholder tokens like "[token]" in actual MCP calls</rule>
+    <rule priority="CRITICAL">NEVER ask user for token in chat - only tell them where to configure it</rule>
+    <rule priority="CRITICAL">ALWAYS check environment variables FIRST ($TECHZONE_API_TOKEN or $GITHUB_PERSONAL_ACCESS_TOKEN)</rule>
+    <rule priority="CRITICAL">ALWAYS retrieve fresh token for each session</rule>
+  </behavioral_rules>
+
+  <if_token_not_found>
+    <techzone>
+      Inform user: "The bearer token for TechZone API is not configured. Please either:
+      1. Set the TECHZONE_API_TOKEN environment variable: export TECHZONE_API_TOKEN=your_token
+      2. Add it to .bob/mcp.json at: mcpServers.[server-name].headers.Authorization
+      
+      Generate token at: https://techzone.ibm.com/my/profile"
+    </techzone>
+    
+    <github>
+      Inform user: "The GitHub Personal Access Token is not configured. Please either:
+      1. Set the GITHUB_PERSONAL_ACCESS_TOKEN environment variable: export GITHUB_PERSONAL_ACCESS_TOKEN=your_token
+      2. Add it to .bob/mcp.json at: mcpServers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN
+      
+      Generate token at: https://github.com/settings/tokens
+      Required scopes: repo, read:org, read:user"
+    </github>
+  </if_token_not_found>
+</mandatory_token_retrieval_workflow>
+
+<!-- Made with Bob -->

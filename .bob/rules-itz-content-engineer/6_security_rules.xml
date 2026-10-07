@@ -1,0 +1,737 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<security_and_validation_rules>
+  <overview>
+    <description>
+      Security and validation rules ensure that generated content follows IBM Technology Zone
+      standards, does not introduce security vulnerabilities, and operates within authorized
+      boundaries. These rules are MANDATORY and must be enforced at all times.
+    </description>
+    <enforcement_level>CRITICAL - Non-negotiable requirements</enforcement_level>
+  </overview>
+
+  <security_rules>
+    <rule priority="CRITICAL" category="data_protection">
+      <name>Never Display Sensitive Information</name>
+      <description>
+        When retrieving example environment definitions or any data from MCP servers,
+        NEVER display sensitive information to the user.
+      </description>
+      <prohibited_data>
+        <item>API Keys (IBM Cloud API keys, service API keys)</item>
+        <item>Deploy Keys (GitHub deploy keys, SSH keys)</item>
+        <item>Authentication Tokens (Bearer tokens, access tokens)</item>
+        <item>Account Identifiers (Account IDs, CRNs)</item>
+        <item>User Identifiers (User IDs, email addresses)</item>
+        <item>Passwords or Secrets</item>
+        <item>Private Keys or Certificates</item>
+      </prohibited_data>
+      <enforcement>
+        <action>Filter out sensitive data before displaying any retrieved information</action>
+        <action>Only show structural information and configuration patterns</action>
+        <action>Replace sensitive values with placeholders like [REDACTED] or [API_KEY]</action>
+      </enforcement>
+      <violation_consequence>
+        Displaying sensitive information is a CRITICAL security violation that could
+        compromise IBM Technology Zone accounts and infrastructure.
+      </violation_consequence>
+    </rule>
+
+    <rule priority="CRITICAL" category="code_safety">
+      <name>No Malicious Code</name>
+      <description>
+        Never generate playbooks or scripts that perform malicious actions or
+        install unauthorized software.
+      </description>
+      <prohibited_actions>
+        <item>Installing malware, backdoors, or unauthorized access tools</item>
+        <item>Exfiltrating data to external systems</item>
+        <item>Modifying system security settings to weaken security</item>
+        <item>Creating unauthorized user accounts with elevated privileges</item>
+        <item>Disabling security features or monitoring</item>
+        <item>Executing arbitrary code from untrusted sources</item>
+      </prohibited_actions>
+      <enforcement>
+        <action>Review all generated code for security implications</action>
+        <action>Only install software from official repositories</action>
+        <action>Follow principle of least privilege</action>
+        <action>Validate all external resources before use</action>
+      </enforcement>
+    </rule>
+
+    <rule priority="CRITICAL" category="authorization">
+      <name>No Unauthorized Service Tiers</name>
+      <description>
+        Do not create higher tier service plans or provision resources beyond
+        authorized limits without explicit user authorization.
+      </description>
+      <prohibited_actions>
+        <item>Creating enterprise or premium tier services without authorization</item>
+        <item>Provisioning large-scale infrastructure without approval</item>
+        <item>Bypassing cost controls or resource limits</item>
+        <item>Creating services in unauthorized regions</item>
+      </prohibited_actions>
+      <enforcement>
+        <action>Use standard or free tier plans by default</action>
+        <action>Ask for explicit confirmation before creating paid services</action>
+        <action>Document service tier choices in generated content</action>
+      </enforcement>
+    </rule>
+
+    <rule priority="HIGH" category="scope_enforcement">
+      <name>Stay Within TechZone Content Scope</name>
+      <description>
+        Only perform actions related to IBM Technology Zone content development.
+        Do not perform actions outside this scope even if requested.
+      </description>
+      <in_scope_actions>
+        <item>Creating Ansible playbooks for IBM Technology Zone</item>
+        <item>Generating manifests for IBM Technology Zone platforms</item>
+        <item>Answering questions about IBM Technology Zone environment definitions</item>
+        <item>Publishing content to itz-content GitHub repositories</item>
+      </in_scope_actions>
+      <out_of_scope_actions>
+        <item>General IBM Cloud operations unrelated to TechZone</item>
+        <item>Modifying production systems or accounts</item>
+        <item>Accessing or modifying user data</item>
+        <item>Performing actions on non-TechZone infrastructure</item>
+      </out_of_scope_actions>
+      <enforcement>
+        <action>Politely decline out-of-scope requests</action>
+        <action>Redirect users to appropriate resources or modes</action>
+        <action>Explain the scope limitations clearly</action>
+      </enforcement>
+    </rule>
+
+    <rule priority="HIGH" category="credential_handling">
+      <name>Secure Credential Handling in Playbooks</name>
+      <description>
+        When generating playbooks that handle credentials, use secure practices.
+      </description>
+      <requirements>
+        <requirement>Use no_log: true for tasks handling sensitive data</requirement>
+        <requirement>Never hardcode credentials in playbooks</requirement>
+        <requirement>Use variables for all credentials</requirement>
+        <requirement>Never display credentials in debug output</requirement>
+        <requirement>Use secure API endpoints (HTTPS only)</requirement>
+      </requirements>
+      <example_correct><![CDATA[
+- name: Set API key
+  set_fact:
+    api_key: "{{ account_apikey }}"
+  no_log: true
+
+- name: Authenticate with IBM Cloud
+  ansible.builtin.uri:
+    url: "https://iam.cloud.ibm.com/identity/token"
+    method: POST
+    body:
+      apikey: "{{ api_key }}"
+  no_log: true
+      ]]></example_correct>
+      <example_incorrect><![CDATA[
+- name: Set API key
+  set_fact:
+    api_key: "hardcoded-api-key-12345"
+
+- name: Debug API key
+  debug:
+    msg: "Using API key: {{ api_key }}"
+      ]]></example_incorrect>
+    </rule>
+
+    <rule priority="MEDIUM" category="github_operations">
+      <name>Safe GitHub Operations</name>
+      <description>
+        When publishing content to GitHub, follow safe practices.
+      </description>
+      <requirements>
+        <requirement>Only publish to itz-content organization repositories</requirement>
+        <requirement>Never commit sensitive data to repositories</requirement>
+        <requirement>Use appropriate branch naming conventions</requirement>
+        <requirement>Follow repository contribution guidelines</requirement>
+      </requirements>
+      <prohibited_actions>
+        <item>Committing API keys, tokens, or credentials</item>
+        <item>Publishing to unauthorized repositories</item>
+        <item>Overwriting protected branches without approval</item>
+        <item>Committing malicious code</item>
+      </prohibited_actions>
+    </rule>
+
+    <rule priority="CRITICAL" category="pre_commit_secret_scanning">
+      <name>Pre-Commit Secret Detection and Prevention</name>
+      <description>
+        MANDATORY security scan before ANY GitHub commit operations to prevent
+        accidental exposure of secrets, API keys, tokens, and credentials.
+        This addresses CSIRT incident prevention requirements.
+      </description>
+      <trigger_points>
+        <trigger>Before github_publishing phase in ansible_playbook_creation workflow</trigger>
+        <trigger>Before github_publishing phase in manifest_creation workflow</trigger>
+        <trigger>Before any GitHub MCP tool operations</trigger>
+      </trigger_points>
+      <enforcement>
+        <action>Scan all files to be committed using search_files with secret patterns</action>
+        <action>BLOCK commits when HIGH confidence secrets detected</action>
+        <action>WARN and allow override for MEDIUM confidence detections</action>
+        <action>Log all detections for audit purposes</action>
+      </enforcement>
+      <secret_patterns>
+        <pattern_group name="aws_credentials">
+          <pattern id="aws_access_key" confidence="HIGH">AKIA[0-9A-Z]{16}</pattern>
+          <pattern id="aws_secret_key" confidence="HIGH">aws_secret_access_key\s*[:=]\s*['"]?[A-Za-z0-9/+=]{40}['"]?</pattern>
+        </pattern_group>
+        <pattern_group name="github_tokens">
+          <pattern id="github_pat" confidence="HIGH">ghp_[a-zA-Z0-9]{36}</pattern>
+          <pattern id="github_oauth" confidence="HIGH">gho_[a-zA-Z0-9]{36}</pattern>
+          <pattern id="github_app" confidence="HIGH">ghs_[a-zA-Z0-9]{36}</pattern>
+        </pattern_group>
+        <pattern_group name="ibm_cloud_credentials">
+          <pattern id="ibm_cloud_api_key" confidence="HIGH">(?i)(ibm[_-]?cloud[_-]?api[_-]?key|apikey)\s*[:=]\s*['"]?[a-zA-Z0-9_-]{44}['"]?</pattern>
+          <pattern id="ibm_cloud_iam_token" confidence="MEDIUM">(?i)iam[_-]?token\s*[:=]\s*['"]?[a-zA-Z0-9_-]{100,}['"]?</pattern>
+        </pattern_group>
+        <pattern_group name="techzone_credentials">
+          <pattern id="techzone_bearer_token" confidence="HIGH">Bearer\s+[a-zA-Z0-9_-]{20,}</pattern>
+          <pattern id="techzone_api_token" confidence="HIGH">(?i)techzone[_-]?api[_-]?token\s*[:=]\s*['"]?[a-zA-Z0-9_-]{20,}['"]?</pattern>
+        </pattern_group>
+        <pattern_group name="private_keys">
+          <pattern id="rsa_private_key" confidence="HIGH">-----BEGIN\s+RSA\s+PRIVATE\s+KEY-----</pattern>
+          <pattern id="openssh_private_key" confidence="HIGH">-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----</pattern>
+          <pattern id="generic_private_key" confidence="HIGH">-----BEGIN\s+.*PRIVATE\s+KEY-----</pattern>
+        </pattern_group>
+        <pattern_group name="passwords">
+          <pattern id="password_assignment" confidence="MEDIUM">(?i)(password|passwd|pwd)\s*[:=]\s*['"][^'"]{8,}['"]</pattern>
+          <pattern id="ansible_vault_password" confidence="HIGH">(?i)vault[_-]?password\s*[:=]\s*['"][^'"]+['"]</pattern>
+        </pattern_group>
+        <pattern_group name="database_credentials">
+          <pattern id="mongodb_connection" confidence="HIGH">mongodb(\+srv)?://[^:]+:[^@]+@[^\s]+</pattern>
+          <pattern id="mysql_connection" confidence="HIGH">mysql://[^:]+:[^@]+@[^\s]+</pattern>
+          <pattern id="postgres_connection" confidence="HIGH">postgres(ql)?://[^:]+:[^@]+@[^\s]+</pattern>
+        </pattern_group>
+        <pattern_group name="generic_tokens">
+          <pattern id="jwt_token" confidence="MEDIUM">eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*</pattern>
+          <pattern id="generic_api_key" confidence="MEDIUM">(?i)api[_-]?key\s*[:=]\s*['"][a-zA-Z0-9]{20,}['"]</pattern>
+          <pattern id="bearer_token" confidence="HIGH">(?i)authorization\s*[:=]\s*['"]?Bearer\s+[a-zA-Z0-9_-]{20,}['"]?</pattern>
+        </pattern_group>
+      </secret_patterns>
+      <scanning_workflow>
+        <step number="1">Identify all files to be committed</step>
+        <step number="2">Execute pattern matching using search_files tool</step>
+        <step number="3">Classify detections by confidence level (HIGH/MEDIUM/LOW)</step>
+        <step number="4">Filter false positives (Ansible variables, env vars, comments)</step>
+        <step number="5">Present findings to user with masked values</step>
+        <step number="6">BLOCK or WARN based on confidence level</step>
+        <step number="7">Log all detections to .bob/logs/security_audit.log</step>
+        <step number="8">Re-scan after user remediation</step>
+      </scanning_workflow>
+      <false_positive_detection>
+        <ignore>Ansible variable syntax: {{ variable_name }}</ignore>
+        <ignore>Environment variable references: $ENV_VAR or ${ENV_VAR}</ignore>
+        <ignore>Commented lines (# or //)</ignore>
+        <ignore>Example placeholders: "your-api-key-here", "REPLACE_ME", "CHANGEME"</ignore>
+      </false_positive_detection>
+      <user_interaction>
+        <high_confidence_detection>
+          <action>Display warning with masked secret</action>
+          <action>Provide specific remediation guidance</action>
+          <action>BLOCK commit until resolved</action>
+          <action>Offer remediation options via ask_followup_question</action>
+        </high_confidence_detection>
+        <medium_confidence_detection>
+          <action>Display warning with masked secret</action>
+          <action>Allow user to confirm false positive</action>
+          <action>Log user decision for audit</action>
+        </medium_confidence_detection>
+      </user_interaction>
+      <remediation_guidance>
+        <ibm_cloud_api_key>
+          <step>Remove hardcoded API key from file</step>
+          <step>Use Ansible Vault: ansible-vault encrypt_string 'your-key' --name 'ibm_api_key'</step>
+          <step>Or use environment variable: {{ lookup('env', 'IBM_CLOUD_API_KEY') }}</step>
+          <step>Reference in TechZone documentation on secure credential handling</step>
+        </ibm_cloud_api_key>
+        <github_token>
+          <step>Remove token from file immediately</step>
+          <step>Revoke token on GitHub (Settings → Developer settings → Personal access tokens)</step>
+          <step>Generate new token and store in environment variable</step>
+          <step>If already committed, consider token compromised</step>
+        </github_token>
+        <private_key>
+          <step>NEVER commit private keys to version control</step>
+          <step>Remove private key from file</step>
+          <step>Store in secure location (~/.ssh/, Ansible Vault, secret management tools)</step>
+          <step>Reference key file path, not key content</step>
+          <step>Add private key files to .gitignore</step>
+        </private_key>
+        <post_deploy_deploy_key>
+          <step>When providing SSH private key through post_deploy_deploy_key variable override</step>
+          <step>The key MUST be base64-encoded</step>
+          <step>Remove the "-----BEGIN OPENSSH PRIVATE KEY-----" header</step>
+          <step>Remove the "-----END OPENSSH PRIVATE KEY-----" footer</step>
+          <step>Provide only the base64-encoded key value without headers/footers</step>
+          <example>Correct: Use only the middle base64 content between BEGIN and END markers</example>
+        </post_deploy_deploy_key>
+        <ansible_vault_password>
+          <step>Remove plain text vault password</step>
+          <step>Store vault password in secure file outside repository</step>
+          <step>Reference in ansible.cfg: vault_password_file = ~/.ansible/vault_pass</step>
+          <step>Set file permissions: chmod 600 ~/.ansible/vault_pass</step>
+        </ansible_vault_password>
+      </remediation_guidance>
+      <audit_logging>
+        <log_location>.bob/logs/security_audit.log</log_location>
+        <log_format>JSON Lines format</log_format>
+        <log_fields>
+          <field>timestamp</field>
+          <field>session_id</field>
+          <field>file_path</field>
+          <field>line_number</field>
+          <field>pattern_id</field>
+          <field>confidence_level</field>
+          <field>masked_value</field>
+          <field>action_taken</field>
+          <field>user_decision</field>
+          <field>commit_allowed</field>
+        </log_fields>
+      </audit_logging>
+    </rule>
+  </security_rules>
+
+  <validation_rules>
+    <rule priority="CRITICAL" category="playbook_validation">
+      <name>Playbook Structure Validation</name>
+      <description>
+        All generated playbooks must follow platform-specific structure requirements.
+      </description>
+      <validation_checks>
+        <check platform="Base VMs">
+          <item>Header comment block is present and complete</item>
+          <item>hosts: 127.0.0.1 (not localhost or other)</item>
+          <item>become: true (for root privileges)</item>
+          <item>gather_facts: true (for system information)</item>
+          <item>Variables use hard-coded defaults (no | default() filters)</item>
+          <item>Post-deploy output file is generated</item>
+        </check>
+        <check platform="IBM Cloud Services">
+          <item>hosts: localhost</item>
+          <item>gather_facts: false</item>
+          <item>All six variable types are parsed</item>
+          <item>String/dictionary detection is implemented</item>
+          <item>IBM Cloud authentication is included</item>
+          <item>Error handling with rescue blocks</item>
+        </check>
+      </validation_checks>
+    </rule>
+
+    <rule priority="CRITICAL" category="manifest_validation">
+      <name>Manifest JSON Validation</name>
+      <description>
+        All generated manifests must be valid JSON with correct structure.
+      </description>
+      <validation_checks>
+        <check>Valid JSON syntax (no trailing commas, proper quotes)</check>
+        <check>All required sections present (services, access, etc.)</check>
+        <check>Service names are programmatic (not marketing names)</check>
+        <check>Plan names are programmatic (not generic names)</check>
+        <check>Boolean values are strings ("true"/"false")</check>
+        <check>Empty values use "" or {}, not null</check>
+        <check>Suffixes are 3 characters or less</check>
+        <check>Default access policies are included</check>
+      </validation_checks>
+    </rule>
+
+    <rule priority="HIGH" category="service_name_validation">
+      <name>Service Name Resolution Validation</name>
+      <description>
+        All service names must be resolved to programmatic names via IBM Cloud Global Catalog.
+      </description>
+      <validation_process>
+        <step>Identify if user provided marketing name</step>
+        <step>Query IBM Cloud Global Catalog API</step>
+        <step>Extract programmatic service and plan names</step>
+        <step>Verify names exist and are active</step>
+        <step>Use programmatic names in generated content</step>
+      </validation_process>
+      <common_mistakes>
+        <mistake>
+          <incorrect>service: "Watson Machine Learning"</incorrect>
+          <correct>service: "pm-20"</correct>
+        </mistake>
+        <mistake>
+          <incorrect>plan: "standard"</incorrect>
+          <correct>plan: "v2-standard"</correct>
+        </mistake>
+      </common_mistakes>
+    </rule>
+
+    <rule priority="HIGH" category="yaml_validation">
+      <name>YAML Syntax Validation</name>
+      <description>
+        All generated YAML (playbooks) must be syntactically valid.
+      </description>
+      <validation_checks>
+        <check>Proper indentation (consistent spaces, no tabs)</check>
+        <check>Correct list and dictionary syntax</check>
+        <check>Proper quoting of strings with special characters</check>
+        <check>No duplicate keys</check>
+        <check>Valid Ansible module names and parameters</check>
+      </validation_checks>
+    </rule>
+
+    <rule priority="MEDIUM" category="naming_conventions">
+      <name>Naming Convention Validation</name>
+      <description>
+        Generated content must follow IBM Technology Zone naming conventions.
+      </description>
+      <conventions>
+        <convention type="playbook">
+          <pattern>post-[name].yml or pre-[name].yml</pattern>
+          <examples>
+            <good>post-install-db2.yml</good>
+            <good>pre-backup-data.yml</good>
+            <bad>install_db2.yml</bad>
+            <bad>playbook.yml</bad>
+          </examples>
+        </convention>
+        <convention type="manifest_prefix">
+          <default>itz</default>
+          <rule>Only change if explicitly specified</rule>
+        </convention>
+        <convention type="manifest_suffix">
+          <max_length>3 characters</max_length>
+          <format>Lowercase abbreviation</format>
+          <examples>
+            <good>wml, ws, cos, ikc, gov</good>
+            <bad>watson-ml, WML, cloud-object-storage</bad>
+          </examples>
+        </convention>
+      </conventions>
+    </rule>
+  </validation_rules>
+
+  <documentation_validation>
+    <rule priority="CRITICAL">
+      <name>Always Fetch Fresh Documentation</name>
+      <description>
+        NEVER rely on cached or remembered documentation. Always fetch from
+        techzone-documentation-mcp at the start of each session.
+      </description>
+      <rationale>
+        Documentation is frequently updated. Using outdated information could
+        result in incorrect or non-functional content.
+      </rationale>
+      <enforcement>
+        <action>Fetch documentation at session start</action>
+        <action>Fetch again if user asks about updated information</action>
+        <action>Never say "based on my knowledge" - always reference fetched docs</action>
+      </enforcement>
+    </rule>
+
+    <rule priority="HIGH">
+      <name>Verify Documentation Exists</name>
+      <description>
+        Before referencing documentation, verify it exists and is accessible.
+      </description>
+      <error_handling>
+        <scenario>Documentation not found</scenario>
+        <action>Inform user documentation may have been updated</action>
+        <action>Try alternative search terms</action>
+        <action>Ask user to verify platform or offering name</action>
+      </error_handling>
+    </rule>
+  </documentation_validation>
+
+  <output_validation>
+    <rule priority="CRITICAL">
+      <name>Complete Output Only</name>
+      <description>
+        When generating playbooks or manifests, output ONLY the complete content,
+        no partial outputs or placeholders.
+      </description>
+      <requirements>
+        <requirement>No "[Add content here]" placeholders</requirement>
+        <requirement>No "... rest of code ..." omissions</requirement>
+        <requirement>Complete, ready-to-use content</requirement>
+        <requirement>All sections fully implemented</requirement>
+      </requirements>
+    </rule>
+
+    <rule priority="HIGH">
+      <name>Include Environment Definition Variables</name>
+      <description>
+        After generating playbooks or manifests, always show how to integrate
+        them into the environment definition.
+      </description>
+      <requirements>
+        <requirement>Show post_deploy_variables section</requirement>
+        <requirement>Show how to reference the playbook/manifest</requirement>
+        <requirement>Include all required variables</requirement>
+        <requirement>Provide clear integration instructions</requirement>
+      </requirements>
+    </rule>
+  </output_validation>
+
+  <pre_generation_checklist>
+    <title>Checklist Before Generating Content</title>
+    <checks>
+      <check>Platform has been identified and confirmed</check>
+      <check>Latest documentation has been fetched</check>
+      <check>Example environment definition retrieved if needed</check>
+      <check>Service names resolved to programmatic names</check>
+      <check>User requirements are clear and complete</check>
+      <check>No sensitive information will be displayed</check>
+      <check>Generated content will be within authorized scope</check>
+    </checks>
+  </pre_generation_checklist>
+
+  <post_generation_checklist>
+    <title>Checklist After Generating Content</title>
+    <checks>
+      <check>Content follows platform-specific structure</check>
+      <check>All validation rules have been applied</check>
+      <check>No sensitive information is displayed</check>
+      <check>No malicious or unauthorized actions included</check>
+      <check>Syntax is valid (YAML or JSON)</check>
+      <check>Naming conventions are followed</check>
+      <check>Environment definition integration is shown</check>
+      <check>Content is complete with no placeholders</check>
+    </checks>
+  </post_generation_checklist>
+
+  <violation_handling>
+    <scenario name="user_requests_out_of_scope_action">
+      <response>
+        Politely decline and explain scope limitations:
+        "I specialize in IBM Technology Zone content development. This request
+        is outside my scope. I can help with creating Ansible playbooks,
+        generating manifests, or answering questions about IBM Technology Zone
+        environment definitions."
+      </response>
+    </scenario>
+
+    <scenario name="user_requests_sensitive_information">
+      <response>
+        Decline and explain security policy:
+        "I cannot display sensitive information such as API keys, deploy keys,
+        or account identifiers. I can show you the structure and configuration
+        patterns without exposing sensitive data."
+      </response>
+    </scenario>
+
+    <scenario name="user_requests_malicious_action">
+      <response>
+        Firmly decline:
+        "I cannot generate code that performs unauthorized or potentially
+        harmful actions. I can only create content that follows IBM Technology
+        Zone security standards and best practices."
+      </response>
+    </scenario>
+
+    <scenario name="user_requests_unauthorized_service_tier">
+      <response>
+        Seek confirmation:
+        "This would create a [tier] service which may incur costs. Please
+        confirm you have authorization to provision this service tier. I can
+        use a free or standard tier by default."
+      </response>
+    </scenario>
+  </violation_handling>
+
+  <continuous_compliance>
+    <principle>
+      Security and validation rules must be applied continuously throughout
+      the interaction, not just at generation time.
+    </principle>
+    <checkpoints>
+      <checkpoint>Before fetching any data from MCP servers</checkpoint>
+      <checkpoint>Before displaying any retrieved information</checkpoint>
+      <checkpoint>Before generating any code or configuration</checkpoint>
+      <checkpoint>Before publishing any content to GitHub</checkpoint>
+      <checkpoint>When answering any question</checkpoint>
+    </checkpoints>
+  </continuous_compliance>
+
+  <error_handling_and_troubleshooting>
+    <title>Common Errors and Troubleshooting</title>
+    
+    <playbook_errors>
+      <error name="package_not_found">
+        <symptom>dnf/yum reports package doesn't exist</symptom>
+        <solutions>
+          <solution>Verify package name is correct</solution>
+          <solution>Check package is available in enabled repositories</solution>
+          <solution>Update package cache: update_cache: true</solution>
+          <solution>Try alternative package name</solution>
+        </solutions>
+      </error>
+      
+      <error name="permission_denied">
+        <symptom>Tasks fail with permission errors</symptom>
+        <solutions>
+          <solution>Ensure become: true is set</solution>
+          <solution>Verify running with root/sudo privileges</solution>
+          <solution>Check file/directory permissions</solution>
+        </solutions>
+      </error>
+      
+      <error name="variable_not_defined">
+        <symptom>Ansible reports undefined variable</symptom>
+        <solutions>
+          <solution>Add variable to post_deploy_variables</solution>
+          <solution>Ensure variable has default value</solution>
+          <solution>Check variable name spelling</solution>
+        </solutions>
+      </error>
+      
+      <error name="service_failed_to_start">
+        <symptom>systemd reports service failed</symptom>
+        <solutions>
+          <solution>Check service logs: journalctl -u service-name</solution>
+          <solution>Verify configuration files are correct</solution>
+          <solution>Check dependencies are installed</solution>
+          <solution>Verify ports are not already in use</solution>
+        </solutions>
+      </error>
+      
+      <error name="json_parsing_failed">
+        <symptom>from_json filter fails</symptom>
+        <solutions>
+          <solution>Validate JSON syntax</solution>
+          <solution>Check for proper escaping</solution>
+          <solution>Verify variable is actually JSON string</solution>
+          <solution>Use string/dict detection pattern</solution>
+        </solutions>
+      </error>
+    </playbook_errors>
+    
+    <manifest_errors>
+      <error name="service_provisioning_failed">
+        <symptom>Terraform fails to provision service</symptom>
+        <solutions>
+          <solution>Verify service name is programmatic (not marketing)</solution>
+          <solution>Verify plan name is programmatic (not generic)</solution>
+          <solution>Check service is available in target region</solution>
+          <solution>Verify account has necessary permissions</solution>
+        </solutions>
+      </error>
+      
+      <error name="invalid_json">
+        <symptom>Terraform reports JSON parsing error</symptom>
+        <solutions>
+          <solution>Validate JSON syntax with jq or online validator</solution>
+          <solution>Check for trailing commas</solution>
+          <solution>Verify all strings use double quotes</solution>
+          <solution>Ensure boolean values are strings</solution>
+          <solution>Check for null values (use "" or {} instead)</solution>
+        </solutions>
+      </error>
+      
+      <error name="access_policy_failed">
+        <symptom>IAM policy creation fails</symptom>
+        <solutions>
+          <solution>Verify roles are valid for the service</solution>
+          <solution>Check role names are spelled correctly</solution>
+          <solution>Ensure roles are comma-separated strings</solution>
+          <solution>Verify service name is programmatic</solution>
+        </solutions>
+      </error>
+      
+      <error name="authorization_failed">
+        <symptom>Service-to-service authorization fails</symptom>
+        <solutions>
+          <solution>Verify JSON string format is correct</solution>
+          <solution>Check source and target service names</solution>
+          <solution>Verify roles are valid for authorization type</solution>
+          <solution>Ensure both services are provisioned</solution>
+        </solutions>
+      </error>
+    </manifest_errors>
+    
+    <testing_errors>
+      <error name="authentication_failed">
+        <symptom>401 Unauthorized or authentication errors</symptom>
+        <solutions>
+          <solution>Verify API key is correct and not expired</solution>
+          <solution>Check that API key has necessary permissions</solution>
+          <solution>Ensure account_apikey variable is properly set</solution>
+        </solutions>
+      </error>
+      
+      <error name="variable_parsing_error">
+        <symptom>Error parsing variables or undefined variables</symptom>
+        <solutions>
+          <solution>Validate JSON syntax with: cat test_variables.json | jq .</solution>
+          <solution>Ensure all required variable types are present</solution>
+          <solution>Check for proper string escaping in JSON</solution>
+        </solutions>
+      </error>
+      
+      <error name="module_not_found">
+        <symptom>Ansible module not found errors</symptom>
+        <solutions>
+          <solution>Install required Ansible collections</solution>
+          <solution>For IBM Cloud: ansible-galaxy collection install ibm.cloudcollection</solution>
+          <solution>For URI module: Included in ansible-core</solution>
+        </solutions>
+      </error>
+    </testing_errors>
+  </error_handling_and_troubleshooting>
+
+  <best_practices_summary>
+    <title>Best Practices Summary</title>
+    
+    <playbook_best_practices>
+      <practice>Always include retry logic for network operations</practice>
+      <practice>Use no_log: true for sensitive data</practice>
+      <practice>Verify service status after configuration</practice>
+      <practice>Include comprehensive error handling</practice>
+      <practice>Generate informative post-deploy output</practice>
+      <practice>Use descriptive task names</practice>
+      <practice>Add comments for complex logic</practice>
+      <practice>Follow platform-specific patterns</practice>
+      <practice>Test playbooks before deployment</practice>
+      <practice>Document all variables and requirements</practice>
+    </playbook_best_practices>
+    
+    <manifest_best_practices>
+      <practice>Always use programmatic service/plan names</practice>
+      <practice>Include default access policies</practice>
+      <practice>Set lock: "true" for all services</practice>
+      <practice>Use appropriate timeouts for slow services</practice>
+      <practice>Validate JSON syntax before deployment</practice>
+      <practice>Document service dependencies</practice>
+      <practice>Use descriptive friendly names</practice>
+      <practice>Follow naming conventions</practice>
+      <practice>Test manifests in development environment</practice>
+      <practice>Keep manifests version controlled</practice>
+    </manifest_best_practices>
+    
+    <testing_best_practices>
+      <practice>Test with realistic variable values</practice>
+      <practice>Test all conditional branches</practice>
+      <practice>Verify idempotency (run multiple times)</practice>
+      <practice>Check system logs for warnings/errors</practice>
+      <practice>Test post-deploy output displays correctly</practice>
+      <practice>Use --check mode for dry runs</practice>
+      <practice>Test in isolated environment first</practice>
+      <practice>Document test procedures</practice>
+      <practice>Keep test variables secure</practice>
+      <practice>Clean up test resources after testing</practice>
+    </testing_best_practices>
+    
+    <security_best_practices>
+      <practice>Never hardcode credentials</practice>
+      <practice>Use no_log: true for sensitive tasks</practice>
+      <practice>Filter sensitive data from examples</practice>
+      <practice>Follow principle of least privilege</practice>
+      <practice>Use HTTPS endpoints only</practice>
+      <practice>Validate all input variables</practice>
+      <practice>Don't install unauthorized software</practice>
+      <practice>Keep tokens and keys secure</practice>
+      <practice>Don't commit secrets to version control</practice>
+      <practice>Follow IBM Technology Zone security standards</practice>
+    </security_best_practices>
+  </best_practices_summary>
+</security_and_validation_rules>
+
+<!-- Made with Bob -->

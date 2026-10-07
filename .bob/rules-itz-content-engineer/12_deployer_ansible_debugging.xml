@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rule>
+    <title>Debugging Ansible Playbooks on OpenShift with ITZ Deployer</title>
+    <description>
+        Guide for debugging Ansible playbooks running in OpenShift with the IBM TechZone Deployer operator.
+        When the Deployer operator provisions a deployment, it creates an Ansible job in the default namespace.
+        This rule helps users locate and inspect job logs when troubleshooting playbook execution issues.
+    </description>
+
+    <context>
+        <when_to_use>
+            - User is debugging Ansible playbook execution in OpenShift
+            - User reports Ansible job failures or unexpected behavior
+            - User needs to inspect Ansible playbook logs
+            - User is troubleshooting ITZ Deployer operator issues
+            - User asks about finding Ansible job output or logs
+        </when_to_use>
+        
+        <architecture>
+            IBM TechZone Deployer Operator (openshift-operators namespace)
+                │
+                ▼
+            Ansible Job (default namespace)
+                │
+                ▼
+            Job Pod Logs ◄──── Primary debugging location
+        </architecture>
+    </context>
+
+    <debugging_workflow>
+        <step number="1">
+            <title>Check the Ansible Job in the Default Namespace</title>
+            <description>
+                The Ansible job runs in the 'default' namespace. Start by checking if the job exists and reviewing its pod logs.
+            </description>
+            
+            <web_console_method>
+                <navigation>
+                    1. Open the OpenShift web console
+                    2. Navigate to: Workloads > Jobs > Project: default
+                    3. Look for a job associated with your deployment
+                    4. Click the job name
+                    5. Select the Pods tab to view the running or completed pod
+                    6. Click the pod name
+                    7. Select the Logs tab
+                    8. Review the Ansible output for task failures, errors, or skipped steps
+                </navigation>
+                
+                <tip>
+                    Use the Download button in the Logs tab to save the full log output if it is too long to read in the console.
+                </tip>
+            </web_console_method>
+            
+            <cli_method>
+                <commands>
+                    # List Ansible jobs in the default namespace
+                    oc get jobs -n default
+                    
+                    # Get the pod created by the job (replace <job-name> with your job name)
+                    oc get pods -n default -l job-name=<job-name>
+                    
+                    # Stream the pod logs
+                    oc logs -n default -l job-name=<job-name> --tail=-1
+                </commands>
+            </cli_method>
+            
+            <what_to_look_for>
+                - Task failures or errors in the Ansible output
+                - Skipped steps that should have executed
+                - Variable values that may be incorrect
+                - Connection or authentication errors
+                - Resource creation failures
+            </what_to_look_for>
+        </step>
+
+        <step number="2">
+            <title>Job Not Found — Check the Deployer Operator Logs</title>
+            <description>
+                If no Ansible job exists in the default namespace, the deployer operator controller may have encountered 
+                an error before the job could be created. The operator runs in the openshift-operators namespace.
+            </description>
+            
+            <web_console_method>
+                <navigation>
+                    1. Navigate to: Workloads > Pods > Project: openshift-operators
+                    2. Filter for a pod with 'itz-deployer-operator' in the name
+                    3. Click the pod name
+                    4. Select the Logs tab
+                    5. Review for errors related to job creation
+                </navigation>
+            </web_console_method>
+            
+            <cli_method>
+                <commands>
+                    # Find the deployer operator pod
+                    oc get pods -n openshift-operators | grep itz-deployer-operator
+                    
+                    # Stream the operator logs (replace <pod-name> with the actual pod name)
+                    oc logs -n openshift-operators <pod-name> --tail=200
+                </commands>
+            </cli_method>
+            
+            <what_to_look_for>
+                - Errors related to job creation
+                - Permission or RBAC issues
+                - Configuration validation failures
+                - Resource quota or limit errors
+                - API server connection issues
+            </what_to_look_for>
+        </step>
+    </debugging_workflow>
+
+    <quick_reference>
+        <table>
+            <header>
+                <column>Symptom</column>
+                <column>Where to Look</column>
+                <column>Namespace</column>
+            </header>
+            <row>
+                <symptom>Ansible playbook failed or produced unexpected output</symptom>
+                <location>Ansible job pod logs</location>
+                <namespace>default</namespace>
+            </row>
+            <row>
+                <symptom>Ansible job was never created</symptom>
+                <location>Deployer operator pod logs</location>
+                <namespace>openshift-operators</namespace>
+            </row>
+        </table>
+    </quick_reference>
+
+    <common_issues>
+        <issue>
+            <symptom>Job pod shows ImagePullBackOff</symptom>
+            <cause>Cannot pull the Ansible runner image</cause>
+            <solution>Check image registry credentials and network connectivity</solution>
+        </issue>
+        
+        <issue>
+            <symptom>Job pod shows CrashLoopBackOff</symptom>
+            <cause>Ansible playbook has syntax errors or fails immediately</cause>
+            <solution>Review pod logs for Ansible syntax errors or missing dependencies</solution>
+        </issue>
+        
+        <issue>
+            <symptom>Job completes but resources not created</symptom>
+            <cause>Playbook tasks may be skipping or failing silently</cause>
+            <solution>Check pod logs for skipped tasks and verify variable values</solution>
+        </issue>
+        
+        <issue>
+            <symptom>No job appears in default namespace</symptom>
+            <cause>Operator controller failed before creating the job</cause>
+            <solution>Check deployer operator logs in openshift-operators namespace</solution>
+        </issue>
+    </common_issues>
+
+    <best_practices>
+        <practice>
+            Always check the Ansible job pod logs first — this is where playbook execution output appears
+        </practice>
+        <practice>
+            Use 'oc logs --tail=-1' to see the complete log output, not just recent lines
+        </practice>
+        <practice>
+            Download logs from the web console if they are too long to read in the browser
+        </practice>
+        <practice>
+            If the job doesn't exist, immediately check the operator controller logs
+        </practice>
+        <practice>
+            Look for the job name pattern that matches your deployment name
+        </practice>
+    </best_practices>
+
+    <mcp_integration>
+        <note>
+            When users need to debug OpenShift-based Ansible deployments, you can use the openshift-mcp server 
+            to programmatically retrieve logs and resource information:
+            
+            - use_mcp_tool with server_name="openshift-mcp" and tool_name="list_pods" to find Ansible job pods
+            - use_mcp_tool with server_name="openshift-mcp" and tool_name="get_pod_logs" to retrieve logs
+            - use_mcp_tool with server_name="openshift-mcp" and tool_name="list_jobs" to list Ansible jobs
+            - use_mcp_tool with server_name="openshift-mcp" and tool_name="describe_resource" for detailed job info
+        </note>
+    </mcp_integration>
+
+    <related_rules>
+        <rule_reference>3_ansible_playbooks.xml</rule_reference>
+        <rule_reference>4_manifest_generation.xml</rule_reference>
+    </related_rules>
+</rule>
+
+<!-- Made with Bob -->

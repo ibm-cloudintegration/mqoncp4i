@@ -1,0 +1,1275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest_generation_instructions>
+  <overview>
+    <description>
+      Manifests are JSON-encoded configurations that define IBM Cloud services,
+      access policies, service authorizations, and identity provider settings for
+      IBM Technology Zone environments. This guide covers creating manifests for
+      all supported platforms.
+    </description>
+    <supported_platforms>
+      <platform>OCPV Multi-VM - Define multiple VM specifications</platform>
+      <platform>VPC Multi-VM - Define multiple VMs in IBM Cloud VPC infrastructure</platform>
+      <platform>watsonx SaaS Shared - Configure watsonx services</platform>
+      <platform>Account Vending - Provision IBM Cloud accounts with services</platform>
+    </supported_platforms>
+    <critical_principle>
+      A single incorrect value will cause the entire Terraform provisioning to fail.
+      Always verify service names, plan names, and JSON structure.
+    </critical_principle>
+  </overview>
+
+  <platform_specific_manifests>
+    <platform name="OCPV Multi-VM">
+      <description>
+        Multi-VM manifests define specifications for multiple virtual machines
+        in an OpenShift Virtualization environment. Each VM can have individual
+        configurations for CPU, memory, storage, networking, and post-deploy customization.
+      </description>
+      
+      <vm_definition_structure>
+        <description>
+          Each VM in the manifest is defined with the following structure
+        </description>
+        <structure><![CDATA[
+{
+  "name": "Required: Unique name for the VM (used in hostname and identification)",
+  "template": "Required: VM template name (certified golden templates: 'itz-rhel9-workstation', 'itz-rhel9-server', 'itz-windows11-ent', 'itz-windows2022-std', 'itz-windows2025-std')",
+  "cpu": "Required: Number of CPU cores (integer)",
+  "memory": "Required: Memory in GB (integer)",
+  "rootDiskSize": "Optional: Root disk size in GB (integer, defaults to global root_disk_size)",
+  "secondaryDiskSize": "Optional: Secondary disk size in GB (integer, defaults to global secondary_disk_size)",
+  "ports": "Optional: Array of port mappings (e.g., ['22/tcp', '80/tcp', '3389/tcp'])",
+  "cloudInit": "Optional: Array of predefined cloud-init module names (e.g., ['rhel-subscription', 'uptycs'])",
+  "customCloudInit": "Optional: Array of custom cloud-init commands to execute",
+  "postDeploy": {
+    "mode": "Optional: Post-deploy mode ('cloud-init', 'ssh', 'container', or 'none'). Defaults to global post_deploy_mode",
+    "repository": "Optional: Git repository URL containing post-deploy code. Defaults to global post_deploy_repository",
+    "branch": "Optional: Branch to checkout. Defaults to global post_deploy_branch",
+    "script": "Optional: Script filename to execute. Defaults to global post_deploy_script",
+    "variables": "Optional: JSON-encoded map of variables. Defaults to global post_deploy_variables",
+    "requirements": "Optional: Ansible requirements file. Defaults to global post_deploy_requirements",
+    "play": "Optional: Ansible playbook filename. Defaults to global post_deploy_play",
+    "ignoreErrors": "Optional: Whether to ignore errors (boolean). Defaults to global post_deploy_ignore_errors"
+  }
+}
+        ]]></structure>
+      </vm_definition_structure>
+
+      <field_descriptions>
+        <field name="name">
+          <required>true</required>
+          <description>Unique identifier for the VM, used in hostname and identification</description>
+          <format>String, alphanumeric with hyphens</format>
+          <examples>web-server, db-primary, app-node-1</examples>
+        </field>
+        
+        <field name="template">
+          <required>true</required>
+          <description>VM template name from certified golden templates</description>
+          <certified_templates>
+            <template>itz-rhel9-workstation - RHEL 9 with GUI</template>
+            <template>itz-rhel9-server - RHEL 9 server (no GUI)</template>
+            <template>itz-windows11-ent - Windows 11 Enterprise</template>
+            <template>itz-windows2022-std - Windows Server 2022 Standard</template>
+            <template>itz-windows2025-std - Windows Server 2025 Standard</template>
+          </certified_templates>
+        </field>
+        
+        <field name="cpu">
+          <required>true</required>
+          <description>Number of CPU cores to allocate</description>
+          <format>Integer</format>
+          <typical_values>2, 4, 8, 16</typical_values>
+        </field>
+        
+        <field name="memory">
+          <required>true</required>
+          <description>Memory allocation in gigabytes</description>
+          <format>Integer</format>
+          <typical_values>4, 8, 16, 32, 64</typical_values>
+        </field>
+        
+        <field name="rootDiskSize">
+          <required>false</required>
+          <description>Root disk size in GB, overrides global setting</description>
+          <format>Integer</format>
+          <default>Uses global root_disk_size if not specified</default>
+        </field>
+        
+        <field name="secondaryDiskSize">
+          <required>false</required>
+          <description>Secondary disk size in GB, overrides global setting</description>
+          <format>Integer</format>
+          <default>Uses global secondary_disk_size if not specified</default>
+        </field>
+        
+        <field name="ports">
+          <required>false</required>
+          <description>Array of port mappings for network access</description>
+          <format>Array of strings in format "port/protocol"</format>
+          <examples>
+            <example>["22/tcp"] - SSH access</example>
+            <example>["80/tcp", "443/tcp"] - HTTP/HTTPS</example>
+            <example>["3389/tcp"] - RDP for Windows</example>
+          </examples>
+        </field>
+        
+        <field name="cloudInit">
+          <required>false</required>
+          <description>Array of predefined cloud-init module names</description>
+          <format>Array of strings</format>
+          <available_modules>
+            <module>rhel-subscription - Register with Red Hat</module>
+            <module>uptycs - Install Uptycs agent</module>
+          </available_modules>
+        </field>
+        
+        <field name="customCloudInit">
+          <required>false</required>
+          <description>Array of custom cloud-init commands</description>
+          <format>Array of strings (shell commands)</format>
+          <examples>
+            <example>["yum install -y httpd", "systemctl enable httpd"]</example>
+          </examples>
+        </field>
+        
+        <field name="postDeploy">
+          <required>false</required>
+          <description>VM-specific post-deploy configuration, overrides global settings</description>
+          <subfields>
+            <subfield name="mode">
+              <options>cloud-init, ssh, container, none</options>
+              <default>Global post_deploy_mode</default>
+            </subfield>
+            <subfield name="repository">
+              <description>Git repository URL</description>
+              <default>Global post_deploy_repository</default>
+            </subfield>
+            <subfield name="branch">
+              <description>Git branch to checkout</description>
+              <default>Global post_deploy_branch</default>
+            </subfield>
+            <subfield name="script">
+              <description>Script filename to execute</description>
+              <default>Global post_deploy_script</default>
+            </subfield>
+            <subfield name="variables">
+              <description>JSON-encoded variable map</description>
+              <default>Global post_deploy_variables</default>
+            </subfield>
+            <subfield name="requirements">
+              <description>Ansible requirements file</description>
+              <default>Global post_deploy_requirements</default>
+            </subfield>
+            <subfield name="play">
+              <description>Ansible playbook filename</description>
+              <default>Global post_deploy_play</default>
+            </subfield>
+            <subfield name="ignoreErrors">
+              <description>Whether to ignore post-deploy errors</description>
+              <format>Boolean</format>
+              <default>Global post_deploy_ignore_errors</default>
+            </subfield>
+          </subfields>
+        </field>
+      </field_descriptions>
+
+      <documentation_reference>
+        <title>Instructions for generating a Multi-VM Manifest (OCPV)</title>
+        <fetch_from>techzone-documentation-mcp</fetch_from>
+        <additional_title>Multi-VM OCP-V</additional_title>
+        <additional_section>Part 2: Building the Platform</additional_section>
+      </documentation_reference>
+
+      <example_configurations>
+        <configuration name="windows_rhel">
+          <description>Windows VM + RHEL VM configuration</description>
+          <use_case>Mixed OS environment for testing</use_case>
+          <example><![CDATA[
+[
+  {
+    "name": "windows-server",
+    "template": "itz-windows2022-std",
+    "cpu": 4,
+    "memory": 16,
+    "ports": ["3389/tcp", "80/tcp", "443/tcp"]
+  },
+  {
+    "name": "rhel-server",
+    "template": "itz-rhel9-server",
+    "cpu": 2,
+    "memory": 8,
+    "ports": ["22/tcp"],
+    "cloudInit": ["rhel-subscription"]
+  }
+]
+          ]]></example>
+        </configuration>
+        
+        <configuration name="rhel_rhel">
+          <description>Multiple RHEL VMs with different roles</description>
+          <use_case>Multi-tier application deployment</use_case>
+          <example><![CDATA[
+[
+  {
+    "name": "web-server",
+    "template": "itz-rhel9-server",
+    "cpu": 2,
+    "memory": 8,
+    "ports": ["22/tcp", "80/tcp", "443/tcp"],
+    "cloudInit": ["rhel-subscription"]
+  },
+  {
+    "name": "app-server",
+    "template": "itz-rhel9-server",
+    "cpu": 4,
+    "memory": 16,
+    "ports": ["22/tcp", "8080/tcp"],
+    "cloudInit": ["rhel-subscription"]
+  },
+  {
+    "name": "db-server",
+    "template": "itz-rhel9-server",
+    "cpu": 4,
+    "memory": 32,
+    "secondaryDiskSize": 200,
+    "ports": ["22/tcp", "5432/tcp"],
+    "cloudInit": ["rhel-subscription"]
+  }
+]
+          ]]></example>
+        </configuration>
+      </example_configurations>
+      
+      <validation_checklist>
+        <check>All VMs have unique names</check>
+        <check>All VMs use certified golden templates</check>
+        <check>CPU and memory values are appropriate for workload</check>
+        <check>Port mappings include required protocols (tcp/udp)</check>
+        <check>Cloud-init modules are valid</check>
+        <check>Post-deploy configuration is complete if specified</check>
+        <check>JSON syntax is valid</check>
+        <check>No duplicate port mappings across VMs</check>
+      </validation_checklist>
+    </platform>
+
+    <platform name="VPC Multi-VM">
+      <description>
+        VPC Multi-VM manifests define specifications for multiple virtual machines
+        in IBM Cloud VPC infrastructure. Supports both shared VPC (using existing infrastructure)
+        and create mode (provisioning new VPC). Each VM can have individual configurations for
+        compute profiles, storage, networking, DNS, and post-deploy customization.
+      </description>
+      
+      <manifest_structure>
+        <description>
+          YAML structure with three main sections: version, vpc, and optional post_deploy
+        </description>
+        <structure><![CDATA[
+version: "1.0"
+
+vpc:
+  version: "1.0"
+  infrastructure:
+    mode: shared  # or "create"
+    # ... infrastructure config
+  vms:
+    - name: vm-name
+      # ... VM config
+
+post_deploy:  # Optional pattern-level orchestration
+  mode: container
+  # ... post-deploy config
+        ]]></structure>
+      </manifest_structure>
+
+      <infrastructure_modes>
+        <critical_policy>
+          <default_mode>shared</default_mode>
+          <description>
+            ALWAYS use shared infrastructure mode by default. The create mode (dedicated/isolated VPC)
+            requires special approval and should NOT be offered as an option to users.
+          </description>
+          <approval_process>
+            If a user specifically requests isolated or dedicated VPC infrastructure:
+            1. Inform them that create mode requires approval
+            2. Direct them to contact TechZone support at: https://techzone.ibm.com/support
+            3. They must submit a support request explaining their use case
+            4. Only proceed with create mode after receiving approval confirmation
+          </approval_process>
+        </critical_policy>
+        
+        <mode name="shared">
+          <description>Uses existing VPC infrastructure (DEFAULT and REQUIRED for all deployments)</description>
+          <fields>
+            <field name="vpc_name_prefix">Default: "itz-vpc-" - Prefix for VPC discovery</field>
+          </fields>
+          <use_cases>
+            <use_case>All standard deployments - leverages existing infrastructure</use_case>
+            <use_case>Multi-tenant environments</use_case>
+            <use_case>Standard TechZone deployments</use_case>
+            <use_case>Development and testing environments</use_case>
+            <use_case>Production workloads</use_case>
+          </use_cases>
+          <configuration_example><![CDATA[
+infrastructure:
+  mode: shared
+  vpc_name_prefix: itz-vpc-
+          ]]></configuration_example>
+        </mode>
+      </infrastructure_modes>
+
+      <vm_definition_structure>
+        <description>
+          Each VM in the manifest is defined with the following structure
+        </description>
+        <required_fields>
+          <field name="name">Unique VM identifier (kebab-case recommended)</field>
+          <field name="image_name">IBM Cloud stock image name (e.g., "ibm-redhat-9-6-minimal-amd64")</field>
+          <field name="os_type">Operating system type: rhel, sles, ubuntu, windows, zos</field>
+          <field name="profile_name">IBM Cloud compute profile (e.g., "bx2-4x16")</field>
+        </required_fields>
+        <optional_fields>
+          <field name="boot_volume_size">Boot volume size in GB (default: 100, range: 100-250)</field>
+          <field name="boot_volume_profile">Storage profile: general-purpose, 5iops-tier, 10iops-tier, custom</field>
+          <field name="additional_volumes">Map of additional data volumes</field>
+          <field name="enable_public_ip">Whether to attach floating IP (default: true)</field>
+          <field name="primary_subnet_number">Which subnet for primary interface (default: 1)</field>
+          <field name="dns">DNS registration configuration</field>
+          <field name="config">Cloud-init and post-installation options</field>
+          <field name="post_deploy">Per-VM post-deploy automation</field>
+        </optional_fields>
+      </vm_definition_structure>
+
+      <operating_system_support>
+        <os type="rhel">
+          <images>
+            <image>ibm-redhat-9-6-minimal-amd64</image>
+            <image>ibm-redhat-9-4-minimal-amd64</image>
+            <image>ibm-redhat-8-10-minimal-amd64</image>
+          </images>
+          <default_ports>
+            <port>SSH: 2223</port>
+            <port>VNC: 5901 (if enabled)</port>
+          </default_ports>
+          <post_deploy_modes>cloud-init, ssh</post_deploy_modes>
+          <features>VNC, noVNC, Cockpit, patching, hardening, FQDN</features>
+        </os>
+        <os type="sles">
+          <images>
+            <image>ibm-sles-15-6-amd64</image>
+            <image>ibm-sles-12-5-amd64</image>
+          </images>
+          <default_ports>
+            <port>SSH: 2223</port>
+          </default_ports>
+          <post_deploy_modes>cloud-init, ssh</post_deploy_modes>
+          <features>Patching, hardening, FQDN</features>
+        </os>
+        <os type="ubuntu">
+          <images>
+            <image>ibm-ubuntu-24-04-minimal-amd64</image>
+            <image>ibm-ubuntu-22-04-minimal-amd64</image>
+          </images>
+          <default_ports>
+            <port>SSH: 2223</port>
+          </default_ports>
+          <post_deploy_modes>cloud-init, ssh</post_deploy_modes>
+          <features>Patching, hardening, FQDN</features>
+        </os>
+        <os type="windows">
+          <images>
+            <image>ibm-windows-server-2022-full-standard-amd64</image>
+            <image>ibm-windows-server-2025-full-standard-amd64</image>
+          </images>
+          <default_ports>
+            <port>RDP: 51124</port>
+            <port>WinRM: 5986 (if secure WinRM enabled)</port>
+          </default_ports>
+          <post_deploy_modes>cloud-init</post_deploy_modes>
+          <features>Secure WinRM, patching, hardening, FQDN</features>
+        </os>
+      </operating_system_support>
+
+      <compute_profiles>
+        <family name="Balanced (bx2)">
+          <description>General-purpose workloads</description>
+          <examples>bx2-2x8, bx2-4x16, bx2-8x32, bx2-16x64</examples>
+        </family>
+        <family name="Compute (cx2)">
+          <description>Compute-intensive workloads</description>
+          <examples>cx2-2x4, cx2-4x8, cx2-8x16</examples>
+        </family>
+        <family name="Memory (mx2)">
+          <description>Memory-intensive workloads</description>
+          <examples>mx2-2x16, mx2-4x32, mx2-8x64</examples>
+        </family>
+      </compute_profiles>
+
+      <post_deploy_configuration>
+        <critical_requirement>
+          UNIQUE REQUIREMENT: GitHub deploy keys MUST be stored in TechZone secrets manager.
+          Unlike other patterns, deploy keys CANNOT be set directly in the manifest or as variables.
+        </critical_requirement>
+        
+        <secret_management_process>
+          <step number="1">
+            <title>Ask User for Repository Name</title>
+            <description>
+              When generating manifests with post-deploy automation, you MUST ask the user for their
+              repository name from the ITZ Content organization (e.g., "my-custom-repo").
+            </description>
+            <example_prompt><![CDATA[
+To configure post-deploy automation, I need your repository name from the ITZ Content organization.
+Example: If your repo is git@github.ibm.com:itz-content/my-custom-repo.git, provide: my-custom-repo
+
+Please provide your repository name:
+            ]]></example_prompt>
+          </step>
+          
+          <step number="2">
+            <title>Construct Repository URL and Secrets Path</title>
+            <construction>
+              <repository_url>git@github.ibm.com:itz-content/{repository-name}.git</repository_url>
+              <secrets_path>techzone/itz/provisioning-secrets/itz-content/{repository-name}</secrets_path>
+            </construction>
+          </step>
+          
+          <step number="3">
+            <title>Inform User About Deploy Key Storage</title>
+            <description>
+              After generating the manifest, inform the user that they need to contact TechZone support
+              to store their deploy key in the secrets manager.
+            </description>
+            <required_information>
+              <info>Repository name: {repository-name}</info>
+              <info>Secrets path: techzone/itz/provisioning-secrets/itz-content/{repository-name}</info>
+              <info>Key name: deploy_key</info>
+            </required_information>
+            <support_contact>
+              <url>https://techzone.ibm.com/support</url>
+              <description>
+                Users must contact TechZone support to have their deploy key stored in the secrets manager.
+                They should provide their repository name and the deploy key value.
+              </description>
+            </support_contact>
+            <example_message><![CDATA[
+**Important: Deploy Key Setup Required**
+
+To complete your post-deploy configuration, you need to store your deploy key in TechZone's secrets manager:
+
+1. Contact TechZone support at: https://techzone.ibm.com/support
+2. Provide the following details:
+   - Repository name: {repository-name}
+   - Secrets path: techzone/itz/provisioning-secrets/itz-content/{repository-name}
+   - Key name: deploy_key
+   - Your deploy key value (the private SSH key for accessing your repository)
+
+TechZone support will securely store your deploy key in the secrets manager, making it available
+to your environment during provisioning.
+            ]]></example_message>
+          </step>
+        </secret_management_process>
+
+        <per_vm_post_deploy>
+          <description>Runs on individual VMs during or after provisioning</description>
+          <modes>cloud-init (during boot), ssh (after VM is reachable)</modes>
+          <critical_keyword_usage>
+            <rule priority="CRITICAL">
+              <name>Use "playbook" for Ansible Playbooks</name>
+              <description>
+                When the task executes an Ansible playbook (.yml or .yaml file containing Ansible tasks),
+                use the "playbook" keyword instead of "script".
+              </description>
+              <correct_example>playbook: "playbooks/configure.yml"</correct_example>
+              <incorrect_example>script: "playbooks/configure.yml"</incorrect_example>
+            </rule>
+            <rule priority="CRITICAL">
+              <name>Use "script" for Shell Scripts and PowerShell</name>
+              <description>
+                When the task executes a BASH script (.sh) or PowerShell script (.ps1),
+                use the "script" keyword.
+              </description>
+              <correct_example>script: "scripts/setup.sh"</correct_example>
+              <correct_example>script: "scripts/configure.ps1"</correct_example>
+              <incorrect_example>playbook: "scripts/setup.sh"</incorrect_example>
+            </rule>
+          </critical_keyword_usage>
+          <structure><![CDATA[
+post_deploy:
+  mode: cloud-init  # or "ssh"
+  version: "1.0"
+  
+  config:
+    work_dir: "/root/post_deploy_jobs"
+    cleanup: true
+  
+  jobs:
+    - name: job-name
+      description: "Job description"
+      repository: "git@github.ibm.com:itz-content/REPO_NAME.git"
+      branch: "main"
+      
+      secret_groups:
+        - type: keymaster
+          path: "techzone/itz/provisioning-secrets/itz-content/REPO_NAME"
+          keys: ["deploy_key"]
+      
+      tasks:
+        - name: task-name
+          script: "scripts/setup.sh"  # Use "script" for BASH/PowerShell
+          # OR
+          playbook: "playbooks/configure.yml"  # Use "playbook" for Ansible
+          variables:
+            key: "value"
+          ]]></structure>
+        </per_vm_post_deploy>
+
+        <pattern_level_post_deploy>
+          <description>Runs after all VMs are provisioned in container environment</description>
+          <mode>container</mode>
+          <capabilities>
+            <capability>Orchestrate across multiple VMs</capability>
+            <capability>Access to all VM details (IPs, FQDNs, names)</capability>
+            <capability>Git repositories, secrets, and COS files</capability>
+          </capabilities>
+          <critical_keyword_usage>
+            <rule priority="CRITICAL">
+              <name>Use "playbook" for Ansible Playbooks</name>
+              <description>
+                When the task executes an Ansible playbook (.yml or .yaml file containing Ansible tasks),
+                use the "playbook" keyword instead of "script".
+              </description>
+              <correct_example>playbook: "playbooks/orchestrate.yml"</correct_example>
+              <incorrect_example>script: "playbooks/orchestrate.yml"</incorrect_example>
+            </rule>
+            <rule priority="CRITICAL">
+              <name>Use "script" for Shell Scripts and PowerShell</name>
+              <description>
+                When the task executes a BASH script (.sh) or PowerShell script (.ps1),
+                use the "script" keyword.
+              </description>
+              <correct_example>script: "scripts/orchestrate.sh"</correct_example>
+              <correct_example>script: "scripts/orchestrate.ps1"</correct_example>
+              <incorrect_example>playbook: "scripts/orchestrate.sh"</incorrect_example>
+            </rule>
+          </critical_keyword_usage>
+          <structure><![CDATA[
+post_deploy:
+  mode: container
+  version: "1.0"
+  
+  jobs:
+    - name: orchestration-job
+      repository: "git@github.ibm.com:itz-content/REPO_NAME.git"
+      
+      secret_groups:
+        - type: keymaster
+          path: "techzone/itz/provisioning-secrets/itz-content/REPO_NAME"
+          keys: ["deploy_key"]
+      
+      tasks:
+        - name: configure-landscape
+          script: "scripts/orchestrate.sh"  # Use "script" for BASH/PowerShell
+          # OR
+          playbook: "playbooks/orchestrate.yml"  # Use "playbook" for Ansible
+          ]]></structure>
+        </pattern_level_post_deploy>
+      </post_deploy_configuration>
+
+      <documentation_reference>
+        <title>Instructions for generating a VPC Multi-VM Manifest</title>
+        <fetch_from>techzone-documentation-mcp</fetch_from>
+        <search_query>VPC Multi-VM manifest structure infrastructure modes</search_query>
+        <additional_title>VPC Multi-VM</additional_title>
+        <additional_section>Part 2: Building the manifest</additional_section>
+      </documentation_reference>
+      
+      <example_retrieval>
+        <title>Retrieve VPC Multi-VM Example Environment</title>
+        <fetch_from>techzone-request-mcp</fetch_from>
+        <platform_id>69aefa4928d4f9a43cabe77b</platform_id>
+        <platform_name>VPC Multi-VM</platform_name>
+        <description>
+          Use techzone-request-mcp to fetch example VPC Multi-VM environment definitions.
+          This provides real-world examples of manifest structure, VM configurations,
+          and post-deploy automation patterns.
+        </description>
+        <what_to_extract>
+          <item>VPC manifest YAML structure</item>
+          <item>Infrastructure mode configurations (shared/create)</item>
+          <item>VM definitions with compute profiles and images</item>
+          <item>Per-VM and pattern-level post-deploy examples</item>
+          <item>Security group and networking setup</item>
+        </what_to_extract>
+        <security_reminder>
+          CRITICAL: Filter all sensitive data before displaying examples.
+          See platform_mapping.xml for complete filtering guidelines.
+        </security_reminder>
+      </example_retrieval>
+
+      <example_configurations>
+        <configuration name="simple_two_vm">
+          <description>RHEL + Windows VM deployment</description>
+          <use_case>Mixed OS environment for testing</use_case>
+          <example><![CDATA[
+version: "1.0"
+
+vpc:
+  version: "1.0"
+  
+  infrastructure:
+    mode: shared
+    vpc_name_prefix: itz-vpc-
+    
+    subnets:
+      0:
+        count: 1
+        enable_public_gateway: true
+    
+    security_group:
+      public_tcp_ports: [2223, 443, 51124, 5986]
+      public_udp_ports: []
+  
+  vms:
+    - name: rhel-server
+      image_name: ibm-redhat-9-6-minimal-amd64
+      os_type: rhel
+      profile_name: bx2-4x16
+      
+      boot_volume_size: 100
+      enable_public_ip: true
+      primary_subnet_number: 1
+      
+      dns:
+        enabled: true
+        ttl: 900
+      
+      config:
+        enable_postinstall: true
+        enable_fqdn: true
+        enable_patching: true
+        enable_hardening: true
+        enable_reboot: true
+    
+    - name: windows-server
+      image_name: ibm-windows-server-2022-full-standard-amd64
+      os_type: windows
+      profile_name: bx2-4x16
+      
+      boot_volume_size: 100
+      enable_public_ip: true
+      primary_subnet_number: 1
+      
+      dns:
+        enabled: true
+        ttl: 900
+      
+      config:
+        enable_postinstall: true
+        enable_fqdn: true
+        enable_secure_winrm: true
+        enable_patching: true
+        enable_hardening: true
+        enable_reboot: true
+          ]]></example>
+        </configuration>
+      </example_configurations>
+
+      <validation_checklist>
+        <check>Manifest version is "1.0"</check>
+        <check>VPC section has version: "1.0"</check>
+        <check>Infrastructure mode is either "shared" or "create"</check>
+        <check>All VMs have required fields: name, image_name, os_type, profile_name</check>
+        <check>Image names match available IBM Cloud stock images</check>
+        <check>OS types match the selected images</check>
+        <check>Compute profiles are valid IBM Cloud profiles</check>
+        <check>Security group ports include all required access ports</check>
+        <check>DNS is only enabled for VMs with public IPs</check>
+        <check>Post-deploy repositories exist and deploy keys are in secrets manager</check>
+        <check>Secret paths use correct format: techzone/itz/provisioning-secrets/itz-content/{repo-name}</check>
+        <check>YAML syntax is valid (proper indentation, no tabs)</check>
+      </validation_checklist>
+    </platform>
+
+    <platform name="watsonx SaaS Shared">
+      <description>
+        Manifests for watsonx SaaS Shared configure watsonx.ai, watsonx.data,
+        and watsonx.governance services in a shared environment.
+      </description>
+      
+      <manifest_structure>
+        <description>
+          JSON structure with four main sections: services, access, authorizations, and idp.
+        </description>
+        
+        <section name="services">
+          <description>Define IBM Cloud services to provision</description>
+          <structure><![CDATA[
+{
+  "services": [
+    {
+      "friendly_name": "Human-readable service name",
+      "instance": "Optional static instance name",
+      "prefix": "itz",
+      "suffix": "3-char abbreviation",
+      "service": "programmatic-service-name",
+      "plan": "programmatic-plan-name",
+      "parameters": {},
+      "resource_group_id": "",
+      "region": "",
+      "lock": "true",
+      "enable": "true",
+      "create": "Optional timeout (e.g., '1h', '6h')",
+      "update": "Optional timeout",
+      "delete": "Optional timeout"
+    }
+  ]
+}
+          ]]></structure>
+          <critical_rules>
+            <rule>Use programmatic service names from IBM Cloud Global Catalog</rule>
+            <rule>Use programmatic plan names from IBM Cloud Global Catalog</rule>
+            <rule>Suffix must be 3 characters or less</rule>
+            <rule>Lock should be "true" to prevent accidental deletion</rule>
+            <rule>Region should be empty string "" unless exception applies</rule>
+            <rule>Parameters should be {} unless service requires specific config</rule>
+          </critical_rules>
+        </section>
+
+        <section name="access">
+          <description>Configure IAM access policies</description>
+          <structure><![CDATA[
+{
+  "access": [
+    {
+      "instance": "policy_identifier",
+      "friendly_name": "Human-readable policy name",
+      "access_group_id": "",
+      "account_level_services_and_roles": {
+        "service-name": "Role1,Role2,Role3"
+      },
+      "all_iam_account_management_services_roles": "",
+      "all_iam_enabled_services_roles": "",
+      "global_resource_group_management_roles": "",
+      "resource_group_id": "",
+      "resource_group_services_and_roles": {},
+      "specific_resource_group_access_roles": "",
+      "specific_resource_group_management_roles": "",
+      "enable": "true"
+    }
+  ]
+}
+          ]]></structure>
+          <critical_rules>
+            <rule>Always include default access policies</rule>
+            <rule>Verify supported roles for each service (they vary)</rule>
+            <rule>Use comma-separated strings for multiple roles</rule>
+          </critical_rules>
+          <default_policies>
+            <policy name="default_access">
+              <all_iam_account_management_services_roles>Administrator,Service ID creator,User API key creator,API key reviewer</all_iam_account_management_services_roles>
+              <specific_resource_group_management_roles>Administrator</specific_resource_group_management_roles>
+            </policy>
+            <policy name="resource_ownership">
+              <all_iam_enabled_services_roles>Administrator,Manager,Reader,Writer,Viewer,Operator,Service Configuration Reader,Key Manager</all_iam_enabled_services_roles>
+            </policy>
+          </default_policies>
+        </section>
+
+        <section name="authorizations">
+          <description>Configure service-to-service authorizations</description>
+          <structure><![CDATA[
+{
+  "authorizations": [
+    {
+      "instance": "authorization_identifier",
+      "friendly_name": "Human-readable authorization name",
+      "service_to_service_authorizations": "{\"source-service=target-service\":\"Role1,Role2\"}",
+      "service_to_resource_type_authorizations": "{}",
+      "enable": "false"
+    }
+  ]
+}
+          ]]></structure>
+          <critical_rules>
+            <rule>Format as JSON string with service pairs and roles</rule>
+            <rule>Use format: "source-service=target-service": "Role1,Role2"</rule>
+            <rule>Default enable to "false", enable only when needed</rule>
+          </critical_rules>
+        </section>
+
+        <section name="idp">
+          <description>Configure App ID identity provider settings</description>
+          <structure><![CDATA[
+{
+  "idp": {
+    "image_filepath": "https://url-to-branding-image.jpg",
+    "image_filetype": "jpeg",
+    "default_idp": "true",
+    "use_long_format": "true",
+    "signup_enabled": "false",
+    "is_mfa_active": "false",
+    "self_service_enabled": "false",
+    "branding_color": "#0f62fe",
+    "branding_footnote_text": "Custom footer text",
+    "branding_tab_title": "Custom tab title",
+    "region": "us-south",
+    "user_count": "10",
+    "user_prefix": "student"
+  }
+}
+          ]]></structure>
+        </section>
+      </manifest_structure>
+
+      <service_name_resolution>
+        <description>
+          Convert marketing names to programmatic names using IBM Cloud Global Catalog
+        </description>
+        <process>
+          <step>Identify marketing name from user input</step>
+          <step>Query IBM Cloud Global Catalog API: https://globalcatalog.cloud.ibm.com/api/v1</step>
+          <step>Extract programmatic service name and plan name</step>
+          <step>Verify available roles for access policies</step>
+          <step>Use programmatic names in manifest</step>
+        </process>
+        <common_mappings>
+          <mapping>
+            <marketing>watsonx.ai Studio</marketing>
+            <service>pm-20</service>
+            <plan>v2-standard</plan>
+            <suffix>wml</suffix>
+            <roles>Manager,Administrator</roles>
+          </mapping>
+          <mapping>
+            <marketing>watsonx.ai Runtime</marketing>
+            <service>data-science-experience</service>
+            <plan>professional-v1</plan>
+            <suffix>ws</suffix>
+            <roles>Administrator</roles>
+          </mapping>
+          <mapping>
+            <marketing>Cloud Object Storage</marketing>
+            <service>cloud-object-storage</service>
+            <plan>standard</plan>
+            <suffix>cos</suffix>
+            <roles>Manager,Administrator</roles>
+            <special>region: "global"</special>
+          </mapping>
+          <mapping>
+            <marketing>watsonx.data intelligence</marketing>
+            <service>datacatalog</service>
+            <plan>essentials</plan>
+            <suffix>ikc</suffix>
+            <roles>Writer,Manager,Viewer,Operator,Editor</roles>
+            <special>create: "1h"</special>
+          </mapping>
+          <mapping>
+            <marketing>watsonx.governance</marketing>
+            <service>aiopenscale</service>
+            <plan>essentials</plan>
+            <suffix>gov</suffix>
+            <roles>Reader,Writer,Viewer,Operator,Editor,Administrator</roles>
+            <special>create: "6h"</special>
+          </mapping>
+          <mapping>
+            <marketing>watsonx.data</marketing>
+            <service>lakehouse</service>
+            <plan>enterprise</plan>
+            <suffix>wxd</suffix>
+            <roles>Manager,Administrator</roles>
+            <region>eu-gb</region>
+            <special>parameters: {"datacenter": "ibm:eu-gb:lon"}</special>
+          </mapping>
+          <mapping>
+            <marketing>DB2</marketing>
+            <service>dashdb-for-transactions</service>
+            <plan>standard</plan>
+            <suffix>db2</suffix>
+            <roles>Manager,Administrator</roles>
+            <region></region>
+            <parameters>{}</parameters>
+          </mapping>
+        </common_mappings>
+      </service_name_resolution>
+
+      <service_name_resolution_process>
+        <title>Detailed Service Name Resolution Process</title>
+        <description>
+          Step-by-step process for converting marketing names to programmatic names
+        </description>
+        <step number="1">
+          <title>Identify Marketing Name</title>
+          <description>User provides marketing name (e.g., "Watson Machine Learning")</description>
+        </step>
+        <step number="2">
+          <title>Query IBM Cloud Global Catalog</title>
+          <description>Query API: https://globalcatalog.cloud.ibm.com/api/v1</description>
+          <method>GET</method>
+          <parameters>Search for service by name</parameters>
+        </step>
+        <step number="3">
+          <title>Extract Programmatic Names</title>
+          <description>Extract programmatic service name and plan name from API response</description>
+        </step>
+        <step number="4">
+          <title>Verify Available Roles</title>
+          <description>Check which IAM roles are supported for the service</description>
+        </step>
+        <step number="5">
+          <title>Use in Manifest</title>
+          <description>Use programmatic names in manifest generation</description>
+        </step>
+      </service_name_resolution_process>
+
+      <documentation_reference>
+        <title>Instructions for generating Manifest for watsonx SaaS Shared</title>
+        <fetch_from>techzone-documentation-mcp</fetch_from>
+        <additional_title>watsonx SaaS Shared</additional_title>
+        <additional_section>Part 2: Building the manifest</additional_section>
+      </documentation_reference>
+    </platform>
+
+    <platform name="Account Vending">
+      <description>
+        Manifests for Account Vending provision IBM Cloud accounts with
+        pre-configured services, access policies, and identity providers.
+      </description>
+      
+      <manifest_structure>
+        <description>
+          Same structure as watsonx SaaS Shared with four sections:
+          services, access, authorizations, and idp.
+        </description>
+        <note>
+          Refer to watsonx SaaS Shared structure above. Account Vending uses
+          the same manifest format but may provision different services.
+        </note>
+      </manifest_structure>
+
+      <documentation_reference>
+        <title>Instructions for generating Manifest for Account Vending</title>
+        <fetch_from>techzone-documentation-mcp</fetch_from>
+        <additional_title>Account Vending</additional_title>
+        <additional_section>Part 2: Building the manifest</additional_section>
+      </documentation_reference>
+    </platform>
+  </platform_specific_manifests>
+
+  <json_formatting_rules>
+    <rule priority="critical">
+      <name>Use Double Quotes</name>
+      <description>All string values must use double quotes, not single quotes</description>
+      <correct>"service": "pm-20"</correct>
+      <incorrect>'service': 'pm-20'</incorrect>
+    </rule>
+    
+    <rule priority="critical">
+      <name>Boolean as Strings</name>
+      <description>Boolean values must be strings, not native booleans</description>
+      <correct>"lock": "true"</correct>
+      <incorrect>"lock": true</incorrect>
+    </rule>
+    
+    <rule priority="high">
+      <name>Empty String for Defaults</name>
+      <description>Use empty string "" for optional fields, not null</description>
+      <correct>"region": ""</correct>
+      <incorrect>"region": null</incorrect>
+    </rule>
+    
+    <rule priority="high">
+      <name>Empty Object for Parameters</name>
+      <description>Use {} for empty parameters, not null</description>
+      <correct>"parameters": {}</correct>
+      <incorrect>"parameters": null</incorrect>
+    </rule>
+    
+    <rule priority="medium">
+      <name>Proper Indentation</name>
+      <description>Use consistent indentation (2 or 4 spaces)</description>
+    </rule>
+    
+    <rule priority="medium">
+      <name>No Trailing Commas</name>
+      <description>JSON does not allow trailing commas</description>
+    </rule>
+  </json_formatting_rules>
+
+  <naming_conventions>
+    <convention category="prefix">
+      <default>itz</default>
+      <description>Default prefix for IBM Technology Zone</description>
+      <rule>Only change if explicitly specified by requirements</rule>
+    </convention>
+    
+    <convention category="suffix">
+      <max_length>3 characters</max_length>
+      <format>Lowercase abbreviation of service name</format>
+      <examples>
+        <example service="Watson Machine Learning">wml</example>
+        <example service="Watson Studio">ws</example>
+        <example service="Cloud Object Storage">cos</example>
+        <example service="watsonx.data intelligence">ikc</example>
+        <example service="watsonx.governance">gov</example>
+      </examples>
+    </convention>
+    
+    <convention category="instance">
+      <format>Descriptive names with underscores</format>
+      <examples>
+        <example>ml_policy</example>
+        <example>cos_policy</example>
+        <example>wxd_ikc_authorizations</example>
+      </examples>
+    </convention>
+  </naming_conventions>
+
+  <special_cases>
+    <case name="Cloud Object Storage">
+      <service>cloud-object-storage</service>
+      <region>global</region>
+      <parameters>{}</parameters>
+      <rationale>COS is a global service</rationale>
+    </case>
+    
+    <case name="watsonx.data">
+      <service>lakehouse</service>
+      <region>eu-gb</region>
+      <parameters>
+        <datacenter>ibm:eu-gb:lon</datacenter>
+      </parameters>
+      <rationale>Requires specific datacenter parameter</rationale>
+    </case>
+    
+    <case name="watsonx.data intelligence">
+      <service>datacatalog</service>
+      <create>1h</create>
+      <rationale>Requires extended provisioning time</rationale>
+    </case>
+    
+    <case name="watsonx.governance">
+      <service>aiopenscale</service>
+      <create>6h</create>
+      <rationale>Requires extended provisioning time</rationale>
+    </case>
+  </special_cases>
+
+  <output_requirements>
+    <requirement priority="critical">
+      <name>Generate ONLY JSON</name>
+      <description>Output only the JSON manifest, no additional text or explanations</description>
+    </requirement>
+    
+    <requirement priority="critical">
+      <name>Maintain Exact Structure</name>
+      <description>Include all required keys and sections</description>
+    </requirement>
+    
+    <requirement priority="critical">
+      <name>Verify Service Names</name>
+      <description>Always validate against IBM Cloud Global Catalog</description>
+    </requirement>
+    
+    <requirement priority="high">
+      <name>Include Default Policies</name>
+      <description>Always include standard default access and resource ownership policies</description>
+    </requirement>
+    
+    <requirement priority="high">
+      <name>Format JSON Properly</name>
+      <description>Use proper indentation and valid JSON syntax</description>
+    </requirement>
+    
+    <requirement priority="medium">
+      <name>Test JSON Validity</name>
+      <description>Ensure JSON can be parsed (test with jq or JSON validator)</description>
+    </requirement>
+  </output_requirements>
+
+  <environment_definition_integration>
+    <description>
+      After generating the manifest, provide the environment definition variables
+      showing how to reference and configure the manifest.
+    </description>
+    
+    <example><![CDATA[
+# Environment Definition Variables
+manifest_variables:
+  - key: manifest
+    value: |
+      {
+        "services": [...],
+        "access": [...],
+        "authorizations": [...],
+        "idp": {...}
+      }
+    type: json
+    description: "Manifest configuration for service provisioning"
+
+# The manifest is automatically processed by Terraform
+# No additional configuration needed
+    ]]></example>
+  </environment_definition_integration>
+
+  <validation_checklist>
+    <check>All service names are programmatic (verified via Global Catalog)</check>
+    <check>All plan names are programmatic (verified via Global Catalog)</check>
+    <check>Suffixes are 3 characters or less</check>
+    <check>Lock is set to "true" for all services</check>
+    <check>Region is empty string unless exception applies</check>
+    <check>Parameters is {} unless exception applies</check>
+    <check>All access policies include required roles</check>
+    <check>Default access policies are included</check>
+    <check>Service authorizations use correct JSON string format</check>
+    <check>IdP section is complete if identity management is required</check>
+    <check>All boolean values are strings ("true"/"false")</check>
+    <check>JSON syntax is valid (no trailing commas, proper quotes)</check>
+    <check>Indentation is consistent</check>
+    <check>No null values (use "" or {} instead)</check>
+  </validation_checklist>
+
+  <common_mistakes>
+    <mistake>
+      <incorrect><![CDATA[
+{
+  "service": "Watson Machine Learning",
+  "plan": "standard",
+  "lock": true,
+  "region": null
+}
+      ]]></incorrect>
+      <correct><![CDATA[
+{
+  "service": "pm-20",
+  "plan": "v2-standard",
+  "lock": "true",
+  "region": ""
+}
+      ]]></correct>
+      <issues>
+        <issue>Marketing name instead of programmatic name</issue>
+        <issue>Generic plan name instead of exact plan name</issue>
+        <issue>Boolean instead of string</issue>
+        <issue>Null instead of empty string</issue>
+      </issues>
+    </mistake>
+  </common_mistakes>
+
+  <integration_with_terraform>
+    <description>
+      Manifests are processed during account provisioning by Terraform
+    </description>
+    <process>
+      <step>User requests environment in IBM Technology Zone</step>
+      <step>Terraform reads the manifest configuration</step>
+      <step>Services are provisioned in sequence</step>
+      <step>Access policies are applied</step>
+      <step>Service authorizations are configured</step>
+      <step>IdP settings are applied (if configured)</step>
+      <step>User receives provisioned environment with configured access</step>
+    </process>
+    <critical_note>
+      The provisioning process is atomic - if any service fails to provision
+      due to incorrect configuration, the entire process fails and must be retried.
+    </critical_note>
+  </integration_with_terraform>
+
+  <comprehensive_field_descriptions>
+    <title>Detailed Field Descriptions for Service Definitions</title>
+    <field name="friendly_name">
+      <purpose>Human-readable name displayed in UI</purpose>
+      <format>Any descriptive string</format>
+      <example>Watson Machine Learning Service</example>
+    </field>
+    <field name="instance">
+      <purpose>Static instance name (optional)</purpose>
+      <format>String or empty</format>
+      <default>Leave empty for auto-generation</default>
+      <example>my-wml-instance</example>
+      <example_empty></example_empty>
+    </field>
+    <field name="prefix">
+      <purpose>Prefix for generated instance names</purpose>
+      <format>String</format>
+      <default>itz</default>
+      <rule>Only change if explicitly specified</rule>
+    </field>
+    <field name="suffix">
+      <purpose>Abbreviation for service type</purpose>
+      <format>3 characters or less, lowercase</format>
+      <examples>wml, ws, cos, ikc, gov</examples>
+      <rule>MUST be 3 characters or less</rule>
+    </field>
+    <field name="service">
+      <purpose>Programmatic service name from IBM Cloud Global Catalog</purpose>
+      <format>Exact string from catalog</format>
+      <critical>MUST use programmatic name, NOT marketing name</critical>
+      <verification>Query https://globalcatalog.cloud.ibm.com/api/v1</verification>
+    </field>
+    <field name="plan">
+      <purpose>Programmatic plan name from IBM Cloud Global Catalog</purpose>
+      <format>Exact string from catalog</format>
+      <critical>MUST use programmatic plan name, NOT generic name</critical>
+      <verification>Query https://globalcatalog.cloud.ibm.com/api/v1</verification>
+    </field>
+    <field name="parameters">
+      <purpose>Service-specific configuration parameters</purpose>
+      <format>JSON object</format>
+      <default>{}</default>
+      <special_cases>
+        <case service="watsonx.data">{"datacenter": "ibm:eu-gb:lon"}</case>
+        <case service="most_services">{}</case>
+      </special_cases>
+    </field>
+    <field name="resource_group_id">
+      <purpose>Target resource group</purpose>
+      <format>String</format>
+      <default></default>
+      <note>Empty string uses default resource group</note>
+    </field>
+    <field name="region">
+      <purpose>IBM Cloud region for service</purpose>
+      <format>String (e.g., "us-south", "eu-gb")</format>
+      <default></default>
+      <special_cases>
+        <case service="Cloud Object Storage">global</case>
+        <case service="watsonx.data">eu-gb</case>
+      </special_cases>
+    </field>
+    <field name="lock">
+      <purpose>Prevent accidental deletion</purpose>
+      <format>String "true" or "false"</format>
+      <default>true</default>
+      <rule>Always use "true" for production</rule>
+    </field>
+    <field name="enable">
+      <purpose>Enable or disable service provisioning</purpose>
+      <format>String "true" or "false"</format>
+      <default>true</default>
+    </field>
+    <field name="create">
+      <purpose>Timeout for Terraform create operation</purpose>
+      <format>String with time unit (e.g., "1h", "6h", "30m")</format>
+      <default>Omit for standard timeout</default>
+      <special_cases>
+        <case service="watsonx.data intelligence">1h</case>
+        <case service="watsonx.governance">6h</case>
+      </special_cases>
+    </field>
+    <field name="update">
+      <purpose>Timeout for Terraform update operation</purpose>
+      <format>String with time unit</format>
+      <default>Omit for standard timeout</default>
+    </field>
+    <field name="delete">
+      <purpose>Timeout for Terraform delete operation</purpose>
+      <format>String with time unit</format>
+      <default>Omit for standard timeout</default>
+    </field>
+  </comprehensive_field_descriptions>
+</manifest_generation_instructions>
+
+<!-- Made with Bob -->

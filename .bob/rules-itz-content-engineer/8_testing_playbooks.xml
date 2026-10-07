@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testing_playbooks>
+  <overview>
+    <description>
+      This guide provides instructions for testing Ansible playbooks in different environments
+      before deploying them to IBM Technology Zone. Testing ensures playbooks work correctly
+      and helps identify issues early in the development process.
+    </description>
+    <testing_scenarios>
+      <scenario>Testing playbooks inside VMs (Base VM platforms)</scenario>
+      <scenario>Testing playbooks locally on Mac for Account Vending</scenario>
+    </testing_scenarios>
+  </overview>
+
+  <vm_testing>
+    <title>Testing Ansible Playbooks Inside VMs</title>
+    <description>
+      For Base VM platforms (OCPV VM, VPC VM), you can test playbooks directly inside
+      the provisioned VM before finalizing your environment definition.
+    </description>
+    
+    <prerequisites>
+      <prerequisite>Provisioned VM from IBM Technology Zone</prerequisite>
+      <prerequisite>SSH access to the VM</prerequisite>
+      <prerequisite>Playbook file ready for testing</prerequisite>
+      <prerequisite>post_deploy_variables.json file with test variables</prerequisite>
+    </prerequisites>
+
+    <step_by_step_process>
+      <step number="1">
+        <title>Open Terminal Window</title>
+        <description>Access the VM's terminal interface</description>
+        <actions>
+          <action>SSH into your VM using the provided credentials</action>
+          <action>Or use the web-based terminal if available in IBM Technology Zone</action>
+        </actions>
+        <example_command>ssh root@your-vm-ip-address</example_command>
+      </step>
+
+      <step number="2">
+        <title>Elevate Privileges</title>
+        <description>Gain root access for playbook execution</description>
+        <command>sudo bash</command>
+        <note>
+          Ansible playbooks for VMs typically require root privileges to install
+          packages and configure system settings.
+        </note>
+      </step>
+
+      <step number="3">
+        <title>Navigate to Post-Deploy Directory</title>
+        <description>Change to the post-deploy directory where playbooks are executed</description>
+        <command>cd ~/post*</command>
+        <alternative_command>cd /root/post-deploy</alternative_command>
+        <note>
+          The post-deploy directory is where IBM Technology Zone executes playbooks
+          during environment provisioning.
+        </note>
+      </step>
+
+      <step number="4">
+        <title>Upload Latest Playbook</title>
+        <description>Transfer your updated playbook.yaml file to the VM</description>
+        <methods>
+          <method name="scp">
+            <description>Secure copy from your local machine</description>
+            <command>scp playbook.yaml root@your-vm-ip:/root/post-deploy/</command>
+          </method>
+          <method name="vi_editor">
+            <description>Edit directly on the VM</description>
+            <command>vi playbook.yaml</command>
+            <note>Paste your playbook content and save</note>
+          </method>
+          <method name="curl">
+            <description>Download from a URL (e.g., GitHub raw file)</description>
+            <command>curl -o playbook.yaml https://raw.githubusercontent.com/your-repo/playbook.yaml</command>
+          </method>
+        </methods>
+      </step>
+
+      <step number="5">
+        <title>Create Test Variables File</title>
+        <description>Create post_deploy_variables.json with test values</description>
+        <example><![CDATA[
+{
+  "custom_variable": "test_value",
+  "db2_version": "11.5.9.0",
+  "install_path": "/opt/ibm"
+}
+        ]]></example>
+        <command>vi post_deploy_variables.json</command>
+        <note>
+          Use the same variable names that your playbook expects. These simulate
+          the variables that would be passed from the environment definition.
+        </note>
+      </step>
+
+      <step number="6">
+        <title>Execute Playbook</title>
+        <description>Run the playbook with your test variables</description>
+        <command>ansible-playbook playbook.yaml -e @post_deploy_variables.json</command>
+        <command_breakdown>
+          <part>ansible-playbook - The Ansible command</part>
+          <part>playbook.yaml - Your playbook file name</part>
+          <part>-e @post_deploy_variables.json - Load variables from JSON file</part>
+        </command_breakdown>
+        <alternative_inline_vars>
+          <command>ansible-playbook playbook.yaml -e "custom_variable=test_value db2_version=11.5.9.0"</command>
+          <note>Use this format for quick tests with few variables</note>
+        </alternative_inline_vars>
+      </step>
+
+      <step number="7">
+        <title>Review Output</title>
+        <description>Check the playbook execution results</description>
+        <what_to_check>
+          <check>All tasks completed successfully (no failed tasks)</check>
+          <check>Services started correctly</check>
+          <check>Files created in expected locations</check>
+          <check>Post-deploy output file generated (if applicable)</check>
+        </what_to_check>
+        <output_file_location>../post_deploy_text_output.txt</output_file_location>
+      </step>
+
+      <step number="8">
+        <title>Iterate and Fix Issues</title>
+        <description>If errors occur, update the playbook and test again</description>
+        <common_issues>
+          <issue>
+            <problem>Package not found</problem>
+            <solution>Verify package name and repository availability</solution>
+          </issue>
+          <issue>
+            <problem>Permission denied</problem>
+            <solution>Ensure running with sudo/root privileges</solution>
+          </issue>
+          <issue>
+            <problem>Variable not defined</problem>
+            <solution>Add missing variable to post_deploy_variables.json</solution>
+          </issue>
+          <issue>
+            <problem>Service failed to start</problem>
+            <solution>Check service logs and configuration files</solution>
+          </issue>
+        </common_issues>
+      </step>
+    </step_by_step_process>
+
+    <best_practices>
+      <practice>Test with realistic variable values that match production</practice>
+      <practice>Test all conditional branches in your playbook</practice>
+      <practice>Verify idempotency by running the playbook multiple times</practice>
+      <practice>Check system logs for any warnings or errors</practice>
+      <practice>Test the post-deploy output file displays correctly</practice>
+    </best_practices>
+
+    <troubleshooting>
+      <issue name="playbook_not_found">
+        <symptom>Error: Could not find or access 'playbook.yaml'</symptom>
+        <solution>Verify you're in the correct directory and file was uploaded successfully</solution>
+        <command>ls -la playbook.yaml</command>
+      </issue>
+      <issue name="json_parse_error">
+        <symptom>Error parsing JSON variables file</symptom>
+        <solution>Validate JSON syntax using jq or online validator</solution>
+        <command>cat post_deploy_variables.json | jq .</command>
+      </issue>
+      <issue name="ansible_not_installed">
+        <symptom>ansible-playbook: command not found</symptom>
+        <solution>Install Ansible on the VM</solution>
+        <command>dnf install -y ansible-core</command>
+      </issue>
+    </troubleshooting>
+  </vm_testing>
+
+  <local_mac_testing>
+    <title>Testing Ansible Playbooks Locally on Mac for Account Vending</title>
+    <description>
+      For Account Vending and IBM Cloud Services platforms, you can test playbooks
+      locally on your Mac by pointing to an existing IBM Cloud account. This allows
+      rapid iteration without waiting for full environment provisioning.
+    </description>
+
+    <prerequisites>
+      <prerequisite>Mac with Homebrew installed</prerequisite>
+      <prerequisite>IBM Cloud account with appropriate services</prerequisite>
+      <prerequisite>IBM Cloud API key</prerequisite>
+      <prerequisite>Playbook file ready for testing</prerequisite>
+    </prerequisites>
+
+    <step_by_step_process>
+      <step number="1">
+        <title>Provision Account Vending Environment</title>
+        <description>
+          Create a test environment in IBM Technology Zone with the services you need
+        </description>
+        <actions>
+          <action>Create manifest with required services</action>
+          <action>Set post_deploy_display_variables to true in environment definition</action>
+          <action>Provision the environment</action>
+          <action>Wait for provisioning to complete</action>
+        </actions>
+        <critical_setting>
+          <name>post_deploy_display_variables</name>
+          <value>true</value>
+          <purpose>
+            This setting causes IBM Technology Zone to display all deployment variables
+            on the reservation output page, which you'll need for local testing.
+          </purpose>
+        </critical_setting>
+        <example_env_variable><![CDATA[
+post_deploy_display_variables: true
+        ]]></example_env_variable>
+      </step>
+
+      <step number="2">
+        <title>Install Ansible on Mac</title>
+        <description>Install Ansible using Homebrew package manager</description>
+        <commands>
+          <command_sequence>
+            <command>
+              <description>Update Homebrew</description>
+              <code>brew update</code>
+            </command>
+            <command>
+              <description>Install Ansible</description>
+              <code>brew install ansible</code>
+            </command>
+            <command>
+              <description>Verify installation</description>
+              <code>ansible --version</code>
+            </command>
+          </command_sequence>
+        </commands>
+        <expected_output>
+          ansible [core 2.x.x]
+          python version = 3.x.x
+        </expected_output>
+        <alternative_installation>
+          <method>Using pip</method>
+          <command>pip3 install ansible</command>
+        </alternative_installation>
+      </step>
+
+      <step number="3">
+        <title>Copy Variables from Reservation Output</title>
+        <description>
+          Navigate to your IBM Technology Zone reservation and copy the displayed variables
+        </description>
+        <actions>
+          <action>Go to your reservation in IBM Technology Zone</action>
+          <action>Find the "Deployment Variables" or "Output" section</action>
+          <action>Copy all the JSON variables displayed</action>
+          <action>Save to a file or prepare to share with Bob</action>
+        </actions>
+        <variables_to_copy>
+          <variable_type>account_variables</variable_type>
+          <variable_type>environment_variables</variable_type>
+          <variable_type>group_variables</variable_type>
+          <variable_type>service_instance_variables</variable_type>
+          <variable_type>idp_variables</variable_type>
+          <variable_type>extra_variables</variable_type>
+        </variables_to_copy>
+        <note>
+          These variables contain the actual IBM Cloud account information and
+          service details from your provisioned environment.
+        </note>
+      </step>
+
+      <step number="4">
+        <title>Format Variables for Testing</title>
+        <description>
+          Ask Bob to format the copied variables into a structure suitable for local testing
+        </description>
+        <user_prompt_example>
+          "Bob, I copied these variables from my IBM Technology Zone reservation.
+          Please format them for local Ansible playbook testing:
+          
+          [paste your copied variables here]"
+        </user_prompt_example>
+        <bob_will_create>
+          <file name="test_variables.json">
+            Properly formatted JSON file with all necessary variables
+          </file>
+          <file name="test_playbook_wrapper.yaml">
+            Optional wrapper playbook that sets up the variable structure
+          </file>
+        </bob_will_create>
+        <formatting_requirements>
+          <requirement>Convert string-encoded JSON to proper JSON objects</requirement>
+          <requirement>Ensure all six variable types are included</requirement>
+          <requirement>Remove any display-only formatting</requirement>
+          <requirement>Validate JSON syntax</requirement>
+        </formatting_requirements>
+      </step>
+
+      <step number="5">
+        <title>Create Test Directory</title>
+        <description>Set up a local directory for testing</description>
+        <commands>
+          <command>mkdir -p ~/ansible-test</command>
+          <command>cd ~/ansible-test</command>
+        </commands>
+        <files_to_create>
+          <file>playbook.yaml - Your Ansible playbook</file>
+          <file>test_variables.json - Formatted variables from Bob</file>
+          <file>ansible.cfg - Optional Ansible configuration</file>
+        </files_to_create>
+      </step>
+
+      <step number="6">
+        <title>Test the Playbook</title>
+        <description>Execute the playbook locally using the formatted variables</description>
+        <command>ansible-playbook playbook.yaml -e @test_variables.json -vv</command>
+        <command_options>
+          <option>-e @test_variables.json - Load variables from file</option>
+          <option>-vv - Verbose output for debugging (use -vvv for more detail)</option>
+          <option>--check - Dry run mode (doesn't make actual changes)</option>
+          <option>--diff - Show differences in files being changed</option>
+        </command_options>
+        <dry_run_first>
+          <command>ansible-playbook playbook.yaml -e @test_variables.json --check --diff</command>
+          <purpose>
+            Test what would happen without making actual changes to your IBM Cloud account
+          </purpose>
+        </dry_run_first>
+      </step>
+
+      <step number="7">
+        <title>Review Results</title>
+        <description>Check the playbook execution and verify changes</description>
+        <what_to_verify>
+          <check>All tasks completed successfully</check>
+          <check>IBM Cloud API calls succeeded</check>
+          <check>Services configured correctly</check>
+          <check>No authentication errors</check>
+          <check>Post-deploy output generated (if applicable)</check>
+        </what_to_verify>
+        <check_ibm_cloud>
+          <description>Verify changes in IBM Cloud console</description>
+          <url>https://cloud.ibm.com</url>
+          <what_to_check>
+            <item>Service instances created/modified</item>
+            <item>Access policies applied</item>
+            <item>Resource configurations updated</item>
+          </what_to_check>
+        </check_ibm_cloud>
+      </step>
+
+      <step number="8">
+        <title>Iterate and Refine</title>
+        <description>Make improvements based on test results</description>
+        <iteration_cycle>
+          <step>Identify issues or improvements needed</step>
+          <step>Update playbook</step>
+          <step>Re-run test</step>
+          <step>Verify fixes</step>
+          <step>Repeat until satisfied</step>
+        </iteration_cycle>
+      </step>
+    </step_by_step_process>
+
+    <best_practices>
+      <practice>Always use --check mode first to preview changes</practice>
+      <practice>Test with a dedicated test IBM Cloud account if possible</practice>
+      <practice>Keep test variables file secure (contains API keys)</practice>
+      <practice>Use verbose mode (-vv or -vvv) for debugging</practice>
+      <practice>Test error handling by simulating failures</practice>
+      <practice>Verify idempotency by running playbook multiple times</practice>
+    </best_practices>
+
+    <security_considerations>
+      <consideration priority="critical">
+        <name>Protect API Keys</name>
+        <description>
+          The test_variables.json file contains IBM Cloud API keys and sensitive data
+        </description>
+        <actions>
+          <action>Never commit test_variables.json to version control</action>
+          <action>Add to .gitignore immediately</action>
+          <action>Delete file after testing</action>
+          <action>Use restrictive file permissions: chmod 600 test_variables.json</action>
+        </actions>
+      </consideration>
+      <consideration priority="high">
+        <name>Test Account Isolation</name>
+        <description>
+          Use a separate test account to avoid affecting production resources
+        </description>
+      </consideration>
+      <consideration priority="high">
+        <name>Cost Management</name>
+        <description>
+          Be aware that testing may create billable resources in IBM Cloud
+        </description>
+        <actions>
+          <action>Use free tier services when possible</action>
+          <action>Clean up test resources after testing</action>
+          <action>Monitor IBM Cloud costs</action>
+        </actions>
+      </consideration>
+    </security_considerations>
+
+    <troubleshooting>
+      <issue name="authentication_failed">
+        <symptom>401 Unauthorized or authentication errors</symptom>
+        <solutions>
+          <solution>Verify API key is correct and not expired</solution>
+          <solution>Check that API key has necessary permissions</solution>
+          <solution>Ensure account_apikey variable is properly set</solution>
+        </solutions>
+      </issue>
+      <issue name="variable_parsing_error">
+        <symptom>Error parsing variables or undefined variables</symptom>
+        <solutions>
+          <solution>Validate JSON syntax with: cat test_variables.json | jq .</solution>
+          <solution>Ensure all required variable types are present</solution>
+          <solution>Check for proper string escaping in JSON</solution>
+        </solutions>
+      </issue>
+      <issue name="module_not_found">
+        <symptom>Ansible module not found errors</symptom>
+        <solutions>
+          <solution>Install required Ansible collections</solution>
+          <solution>For IBM Cloud: ansible-galaxy collection install ibm.cloudcollection</solution>
+          <solution>For URI module: Included in ansible-core</solution>
+        </solutions>
+      </issue>
+      <issue name="connection_timeout">
+        <symptom>Timeout connecting to IBM Cloud APIs</symptom>
+        <solutions>
+          <solution>Check internet connectivity</solution>
+          <solution>Verify firewall/proxy settings</solution>
+          <solution>Increase timeout values in playbook</solution>
+        </solutions>
+      </issue>
+    </troubleshooting>
+  </local_mac_testing>
+
+  <when_to_use_each_method>
+    <vm_testing>
+      <use_when>Testing Base VM playbooks (OCPV, VPC)</use_when>
+      <use_when>Testing software installation and system configuration</use_when>
+      <use_when>Verifying playbook works in actual VM environment</use_when>
+      <advantages>
+        <advantage>Tests in actual target environment</advantage>
+        <advantage>Verifies system-level operations</advantage>
+        <advantage>No local setup required</advantage>
+      </advantages>
+    </vm_testing>
+    <local_mac_testing>
+      <use_when>Testing Account Vending playbooks</use_when>
+      <use_when>Testing IBM Cloud service configurations</use_when>
+      <use_when>Rapid iteration during development</use_when>
+      <advantages>
+        <advantage>Faster iteration cycle</advantage>
+        <advantage>No need to provision full environment each time</advantage>
+        <advantage>Better debugging with local tools</advantage>
+        <advantage>Can use version control for test files</advantage>
+      </advantages>
+    </local_mac_testing>
+  </when_to_use_each_method>
+
+  <integration_with_mode>
+    <how_to_ask_for_help>
+      <scenario>User wants to test a VM playbook</scenario>
+      <user_prompt>"How do I test my playbook inside the VM?"</user_prompt>
+      <mode_response>
+        Provide step-by-step VM testing instructions from this guide
+      </mode_response>
+    </how_to_ask_for_help>
+    <how_to_ask_for_help>
+      <scenario>User wants to test Account Vending playbook locally</scenario>
+      <user_prompt>"How do I test my Account Vending playbook on my Mac?"</user_prompt>
+      <mode_response>
+        Provide step-by-step local Mac testing instructions from this guide
+      </mode_response>
+    </how_to_ask_for_help>
+    <how_to_ask_for_help>
+      <scenario>User needs help formatting variables</scenario>
+      <user_prompt>"Bob, format these variables for local testing: [paste variables]"</user_prompt>
+      <mode_response>
+        Parse the provided variables and create properly formatted test_variables.json
+      </mode_response>
+    </how_to_ask_for_help>
+  </integration_with_mode>
+</testing_playbooks>
+
+<!-- Made with Bob -->

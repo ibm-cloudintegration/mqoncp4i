@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ansible_playbook_instructions>
+  <overview>
+    <description>
+      Ansible playbooks in IBM Technology Zone provide post-deploy customization and
+      pre-destroy cleanup for environment definitions. This guide covers creating
+      playbooks for all supported platforms following official standards.
+    </description>
+    <playbook_types>
+      <type name="post-deploy">
+        <naming_convention>post-[name/action].yml</naming_convention>
+        <purpose>Configure and customize environments after initial provisioning</purpose>
+        <examples>post-install-db2.yml, post-configure-watsonx.yml</examples>
+      </type>
+      <type name="pre-destroy">
+        <naming_convention>pre-[name/action].yml</naming_convention>
+        <purpose>Cleanup and backup before environment destruction</purpose>
+        <examples>pre-backup-data.yml, pre-cleanup-resources.yml</examples>
+      </type>
+    </playbook_types>
+  </overview>
+
+  <platform_specific_playbooks>
+    <platform name="IBM Cloud Services" post_deploy_type="Terraform GitOps Post-Deploy">
+      <offerings>
+        <offering>watsonx SaaS Shared</offering>
+        <offering>Account Vending</offering>
+      </offerings>
+      
+      <playbook_structure>
+        <description>
+          Playbooks for IBM Cloud Services run on provisioning infrastructure with
+          access to IBM Cloud API and CLI. They parse deployment variables and
+          configure IBM Cloud services.
+        </description>
+        
+        <standard_template><![CDATA[
+---
+- name: IBMCloud Account Vending
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    delay_seconds: 10
+    retry_count: 3
+    cloud_region: "us-south"
+
+  tasks:
+    ############################################
+    # Gather all variables
+    ############################################
+    - name: Parse deployment variables
+      tags: [parse, setup]
+      block:
+        - name: Set backward compatibility variables
+          set_fact:
+            account_vars: "{{ account_variables | default(itz.deployment.account_variables | default('{}')) }}"
+            environment_vars: "{{ environment_variables | default(itz.deployment.environment_variables | default('{}')) }}"
+            group_vars: "{{ group_variables | default(itz.deployment.group_variables | default('{}')) }}"
+            idp_vars: "{{ idp_variables | default(itz.deployment.idp_variables | default('{}')) }}"
+            service_instance_vars: "{{ service_instance_variables | default(itz.deployment.service_instance_variables | default('{}')) }}"
+            extra_vars: "{{ extra_variables | default(itz.deployment.extra_variables | default('{}')) }}"
+
+        # Parse each variable type with string/dict detection
+        [Include variable parsing for all six types]
+
+      rescue:
+        - name: Handle parsing failures
+          debug:
+            msg: "Critical error during variable parsing."
+        
+        - name: Fail playbook on critical parsing errors
+          fail:
+            msg: "Unable to continue due to critical parsing errors."
+
+    # Set facts from parsed JSON
+    - name: Set facts from supplied json data
+      ansible.builtin.set_fact:
+        account_apikey: "{{ account_json['account_api_key'] }}"
+        account_name: "{{ account_json['account_name'] }}"
+        account_id: "{{ account_json['account_id'] }}"
+
+    ############################################
+    # IBM Cloud Authentication
+    ############################################
+    - name: Connect to IBM Cloud account
+      ansible.builtin.uri:
+        url: "https://iam.cloud.ibm.com/identity/token"
+        method: POST
+        return_content: yes
+        body_format: form-urlencoded
+        body:
+          apikey: "{{ account_apikey }}"
+          grant_type: "urn:ibm:params:oauth:grant-type:apikey"
+      register: token_response
+      delay: "{{ delay_seconds }}"
+      retries: "{{ retry_count }}"
+
+    - name: Set fact access_token
+      ansible.builtin.set_fact:
+        access_token: "{{ token_response['json'].access_token }}"
+
+    ############################################
+    # Service Configuration Tasks
+    ############################################
+    [Add service-specific tasks here]
+
+    ############################################
+    # Post-Deploy Output
+    ############################################
+    - name: Create post-deploy HTML output file
+      ansible.builtin.copy:
+        dest: ../post_deploy_text_output.txt
+        content: |
+          [HTML formatted output]
+        mode: '0644'
+        ]]></standard_template>
+      </playbook_structure>
+
+      <variable_parsing_requirements>
+        <requirement>Parse all six variable types (account, environment, group, idp, service_instance, extra)</requirement>
+        <requirement>Detect if variable is string or dictionary</requirement>
+        <requirement>Use from_json filter for string variables</requirement>
+        <requirement>Use direct access for dictionary variables</requirement>
+        <requirement>Include error handling with rescue blocks</requirement>
+      </variable_parsing_requirements>
+
+      <authentication_requirements>
+        <requirement>Obtain bearer token from IBM Cloud IAM</requirement>
+        <requirement>Use token in Authorization headers for API calls</requirement>
+        <requirement>Set up IBM Cloud CLI authentication for command execution</requirement>
+        <requirement>Use no_log: true for sensitive data</requirement>
+      </authentication_requirements>
+
+      <documentation_reference>
+        <title>Instructions for generating Ansible Playbooks for IBM Cloud Services</title>
+        <fetch_from>techzone-documentation-mcp</fetch_from>
+        <additional_sections>
+          <section platform="watsonx SaaS Shared">
+            <title>watsonx SaaS Shared</title>
+            <section_name>Part 4: Adding Post-Deploy customisation (advanced)</section_name>
+          </section>
+          <section platform="Account Vending">
+            <title>Account Vending</title>
+            <section_name>Part 4: Adding Post-Deploy customisation (advanced)</section_name>
+          </section>
+        </additional_sections>
+      </documentation_reference>
+    </platform>
+
+    <platform name="Base VMs" post_deploy_type="Terraform OS Post-Deploy">
+      <offerings>
+        <offering>OCPV Base VM Single and Multi-VM</offering>
+        <offering>IBM Cloud Base VPC VM</offering>
+      </offerings>
+      
+      <playbook_structure>
+        <description>
+          Playbooks for Base VMs run during Cloud-Init phase on RedHat 9.x systems.
+          They have direct access to the VM and use infrastructure variables.
+        </description>
+        
+        <standard_template><![CDATA[
+---
+################################################################################
+# Playbook: post-[name].yml
+# Purpose: [Brief description of what this playbook does]
+# Usage: ansible-playbook post-[name].yml -e "variable='value'"
+################################################################################
+
+- name: [Descriptive Task Name]
+  hosts: 127.0.0.1
+  become: true
+  gather_facts: true
+  
+  vars:
+    # Variables are passed from environment override post_deploy_variables
+    [variable_name]: [default_value]  # Use hard-coded defaults, NOT | default() filters
+  
+  tasks:
+    # ------------------------------------------------------------------
+    #        Input Variable Processing
+    # ------------------------------------------------------------------
+
+    - name: Display loaded variables that are needed
+      ansible.builtin.debug:
+        msg: |
+          Variables from reservation:
+          [variable_name]: {{ [variable_name] }}
+
+    ############################################
+    # System Updates and Package Installation
+    ############################################
+    
+    - name: Update system packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+      register: dnf_update
+      retries: 3
+      delay: 5
+      until: dnf_update is succeeded
+
+    ############################################
+    # Service Configuration
+    ############################################
+    
+    [Add service-specific configuration tasks]
+
+    # ------------------------------------------------------------------
+    #        Post-Deploy Output Generation
+    # ------------------------------------------------------------------
+    - name: Create post-deploy HTML output file
+      ansible.builtin.copy:
+        dest: ../post_deploy_text_output.txt
+        content: |
+          [HTML formatted output]
+        mode: '0644'
+
+  handlers:
+    [Optional handlers for service restarts]
+        ]]></standard_template>
+      </playbook_structure>
+
+      <critical_rules>
+        <rule priority="critical">
+          <name>No Default Filters</name>
+          <incorrect>db2_version: "{{ db2_version | default('11.5.9.0') }}"</incorrect>
+          <correct>db2_version: "11.5.9.0"</correct>
+          <rationale>Variables are passed from environment override. Hard-coded defaults ensure predictable behavior.</rationale>
+        </rule>
+        
+        <rule priority="high">
+          <name>Execution Context</name>
+          <requirement>hosts: 127.0.0.1 (local system)</requirement>
+          <requirement>become: true (root privileges)</requirement>
+          <requirement>gather_facts: true (system information)</requirement>
+          <rationale>Playbooks run during Cloud-Init on the VM itself</rationale>
+        </rule>
+        
+        <rule priority="high">
+          <name>Package Management</name>
+          <requirement>Use ansible.builtin.dnf for RedHat 9.x</requirement>
+          <requirement>Include retry logic for network operations</requirement>
+          <requirement>Update package cache before installations</requirement>
+        </rule>
+      </critical_rules>
+
+      <documentation_reference>
+        <title>Instructions for generating a VM Ansible Playbook</title>
+        <fetch_from>techzone-documentation-mcp</fetch_from>
+        <additional_sections>
+          <section platform="OCPV Single VM">
+            <title>Base OCP-V VM</title>
+            <section_name>Part 4: Adding Post-Deploy customisation (advanced)</section_name>
+          </section>
+          <section platform="OCPV Multi-VM">
+            <title>Multi-VM OCP-V</title>
+            <section_name>Part 4: Adding Post-Deploy customisation (advanced)</section_name>
+          </section>
+          <section platform="VPC VM">
+            <title>Base VPC VM</title>
+            <section_name>Part 4: Adding Post-Deploy customisation (advanced)</section_name>
+          </section>
+        </additional_sections>
+      </documentation_reference>
+    </platform>
+
+    <platform name="OpenShift Clusters" post_deploy_type="Terraform Post-Deployer">
+      <offerings>
+        <offering>OpenShift with Post-Deployer</offering>
+      </offerings>
+      
+      <playbook_structure>
+        <description>
+          Playbooks for OpenShift clusters use GitOps-based deployment with
+          ArgoCD integration. They configure cluster resources and applications.
+        </description>
+        
+        <characteristics>
+          <characteristic>GitOps-based deployment model</characteristic>
+          <characteristic>Access to OpenShift API and CLI</characteristic>
+          <characteristic>ArgoCD application definitions</characteristic>
+          <characteristic>Cluster-level variable context</characteristic>
+        </characteristics>
+      </playbook_structure>
+
+      <documentation_reference>
+        <title>TechZone Deployer Configuration</title>
+        <section_name>Part 4: Adding Post-Deploy customisation (advanced)</section_name>
+        <fetch_from>techzone-documentation-mcp</fetch_from>
+      </documentation_reference>
+    </platform>
+  </platform_specific_playbooks>
+
+  <common_patterns>
+    <pattern name="service_name_resolution">
+      <description>
+        Convert marketing names to programmatic names using IBM Cloud Global Catalog
+      </description>
+      <process>
+        <step>Identify marketing name (e.g., "Watson Machine Learning")</step>
+        <step>Query IBM Cloud Global Catalog API: https://globalcatalog.cloud.ibm.com/api/v1</step>
+        <step>Extract programmatic name (e.g., "pm-20")</step>
+        <step>Use programmatic name in playbook</step>
+      </process>
+      <common_mappings>
+        <mapping marketing="Watson Machine Learning" programmatic="pm-20"/>
+        <mapping marketing="Watson Studio" programmatic="data-science-experience"/>
+        <mapping marketing="Cloud Object Storage" programmatic="cloud-object-storage"/>
+        <mapping marketing="DB2" programmatic="dashdb-for-transactions"/>
+      </common_mappings>
+    </pattern>
+
+    <pattern name="retry_logic">
+      <description>Network-dependent operations should include retry logic</description>
+      <template><![CDATA[
+- name: Operation with retry
+  ansible.builtin.[module]:
+    [parameters]
+  register: result
+  retries: 3
+  delay: 5
+  until: result is succeeded
+      ]]></template>
+      <use_cases>
+        <use_case>Package installations</use_case>
+        <use_case>API calls</use_case>
+        <use_case>Service downloads</use_case>
+        <use_case>External resource access</use_case>
+      </use_cases>
+    </pattern>
+
+    <pattern name="post_deploy_output">
+      <description>Generate HTML-formatted output for IBM Technology Zone UI</description>
+      <requirements>
+        <requirement>File location: ../post_deploy_text_output.txt</requirement>
+        <requirement>Format: HTML with embedded CSS</requirement>
+        <requirement>Include: Account/VM details, service status, next steps</requirement>
+        <requirement>Use: IBM Technology Zone standard styling</requirement>
+      </requirements>
+      <css_classes>
+        <class name="additionalInstructions">Main container</class>
+        <class name="additionalInstructions h4">Header with IBM blue background</class>
+        <class name="additionalInstructions .bold">Bold white text</class>
+        <class name="additionalInstructions table">Full-width table</class>
+        <class name="additionalInstructions td">Table cells with light blue background</class>
+      </css_classes>
+    </pattern>
+
+    <pattern name="error_handling">
+      <description>Proper error handling with rescue blocks</description>
+      <template><![CDATA[
+- name: Critical operation
+  block:
+    [tasks]
+  rescue:
+    - name: Log error
+      debug:
+        msg: "Error occurred: {{ ansible_failed_result.msg }}"
+    
+    - name: Fail with context
+      fail:
+        msg: "Failed to complete operation: [context]"
+      ]]></template>
+    </pattern>
+
+    <pattern name="service_verification">
+      <description>Verify service status after configuration</description>
+      <template><![CDATA[
+- name: Start service
+  ansible.builtin.systemd:
+    name: [service-name]
+    state: started
+  register: service_status
+
+- name: Verify service is running
+  ansible.builtin.systemd:
+    name: [service-name]
+  register: service_check
+  failed_when: service_check.status.ActiveState != "active"
+      ]]></template>
+    </pattern>
+  </common_patterns>
+
+  <output_requirements>
+    <requirement priority="critical">
+      <name>Generate Complete Playbook</name>
+      <description>Output ONLY the Ansible playbook YAML, no additional text</description>
+    </requirement>
+    
+    <requirement priority="critical">
+      <name>Include Header Comment</name>
+      <description>Use standardized comment block with playbook name, purpose, and usage</description>
+    </requirement>
+    
+    <requirement priority="high">
+      <name>Follow Platform Structure</name>
+      <description>Use the correct structure for the target platform</description>
+    </requirement>
+    
+    <requirement priority="high">
+      <name>Include Post-Deploy Output</name>
+      <description>Always generate HTML-formatted output file</description>
+    </requirement>
+    
+    <requirement priority="medium">
+      <name>Add Retry Logic</name>
+      <description>Include retries for network-dependent operations</description>
+    </requirement>
+    
+    <requirement priority="medium">
+      <name>Verify Service Status</name>
+      <description>Include verification tasks after service configuration</description>
+    </requirement>
+  </output_requirements>
+
+  <environment_definition_integration>
+    <description>
+      After generating the playbook, provide the environment definition variables
+      showing how to reference and configure the playbook.
+    </description>
+    
+    <example_for_vm_platforms><![CDATA[
+# Environment Definition Variables
+post_deploy_variables:
+  - key: custom_variable
+    value: "example_value"
+    type: string
+    description: "Description of the variable"
+
+# Reference the playbook
+post_deploy_script: |
+  ansible-playbook post-[name].yml \
+    -e "custom_variable={{ custom_variable }}"
+    ]]></example_for_vm_platforms>
+
+    <example_for_cloud_services><![CDATA[
+# Environment Definition Variables
+post_deploy_playbook: "post-[name].yml"
+
+# Variables are automatically passed as JSON
+# No additional configuration needed
+    ]]></example_for_cloud_services>
+  </environment_definition_integration>
+
+  <validation_checklist>
+    <check>Header comment block is complete and accurate</check>
+    <check>Variables use hard-coded defaults (no | default() filters) for VM platforms</check>
+    <check>Service names are programmatic (verified via IBM Cloud Global Catalog)</check>
+    <check>Package installations include retry logic</check>
+    <check>Service status is verified after starting</check>
+    <check>Post-deploy HTML output is generated</check>
+    <check>Success messages are displayed</check>
+    <check>Handlers are defined for service restarts (if needed)</check>
+    <check>File permissions are explicitly set</check>
+    <check>YAML syntax is valid</check>
+    <check>Platform-specific requirements are met</check>
+    <check>No sensitive data in debug output (use no_log: true)</check>
+  </validation_checklist>
+
+  <security_guidelines>
+    <guideline>Use no_log: true for tasks handling sensitive data (API keys, passwords)</guideline>
+    <guideline>Never display API keys or tokens in debug output</guideline>
+    <guideline>Validate input variables before use</guideline>
+    <guideline>Use secure API endpoints (HTTPS only)</guideline>
+    <guideline>Follow principle of least privilege for service accounts</guideline>
+    <guideline>Do not install unauthorized or malicious software</guideline>
+    <guideline>Do not create higher tier service plans without authorization</guideline>
+  </security_guidelines>
+</ansible_playbook_instructions>
+
+<!-- Made with Bob -->

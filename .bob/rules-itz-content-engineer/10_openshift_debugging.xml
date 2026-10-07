@@ -1,0 +1,596 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openshift_debugging_skill>
+  <overview>
+    <description>
+      This skill provides an interactive debugging workflow for OpenShift playbooks in
+      TechZone environments using the OpenShift MCP server. It guides users through 
+      retrieving environment details, connecting to clusters via MCP, and executing 
+      debugging commands through the MCP server's tools.
+    </description>
+    <when_to_use>
+      Use this skill when users need to debug OpenShift playbooks, troubleshoot cluster
+      issues, or investigate deployment problems in TechZone OpenShift environments.
+    </when_to_use>
+    <trigger_phrases>
+      <phrase>debug openshift playbook</phrase>
+      <phrase>troubleshoot openshift cluster</phrase>
+      <phrase>debug my openshift environment</phrase>
+      <phrase>help me debug openshift</phrase>
+      <phrase>investigate openshift deployment</phrase>
+    </trigger_phrases>
+    <mcp_server_integration>
+      <server_name>openshift-mcp</server_name>
+      <repository>https://github.com/openshift/openshift-mcp-server</repository>
+      <description>
+        The OpenShift MCP server provides direct cluster interaction capabilities
+        without requiring local CLI tools or kubeconfig management. All operations
+        are performed through MCP tools that handle authentication and cluster access.
+      </description>
+    </mcp_server_integration>
+  </overview>
+
+  <workflow>
+    <step number="1">
+      <title>Prompt for Request/Environment ID</title>
+      <description>
+        Ask the user for their TechZone request ID or environment ID to retrieve
+        the OpenShift cluster details.
+      </description>
+      <action>
+        Use ask_followup_question to request the ID if not already provided.
+      </action>
+      <example><![CDATA[
+<ask_followup_question>
+<question>What is your TechZone request ID or environment ID for the OpenShift cluster you want to debug?</question>
+<follow_up>
+<suggest>I have a request ID (24-character hex string)</suggest>
+<suggest>I have an environment ID (24-character hex string)</suggest>
+<suggest>I'm not sure which ID I have</suggest>
+</follow_up>
+</ask_followup_question>
+      ]]></example>
+      <id_format>
+        <request_id>24-character hexadecimal string (e.g., 69dff29ea71342c90ebb2b41)</request_id>
+        <environment_id>24-character hexadecimal string (e.g., 69dff2a2df7b5e69455106b0)</environment_id>
+      </id_format>
+    </step>
+
+    <step number="2">
+      <title>Retrieve Environment Details</title>
+      <description>
+        Use the appropriate MCP server to retrieve the environment details based on
+        the ID type provided.
+      </description>
+      <actions>
+        <action>Try techzone-get-request first if ID format is ambiguous</action>
+        <action>If request lookup fails with 404, try techzone-get-environment</action>
+        <action>Extract environment details including status, cluster info, and kubeconfig</action>
+      </actions>
+      <mcp_servers>
+        <server name="techzone-request-mcp">
+          <tool>techzone-get-request</tool>
+          <parameters>
+            <parameter>requestId: The request ID</parameter>
+            <parameter>bearerToken: From .bob/mcp.json configuration</parameter>
+          </parameters>
+        </server>
+        <server name="techzone-environment-mcp">
+          <tool>techzone-get-environment</tool>
+          <parameters>
+            <parameter>environmentId: The environment ID</parameter>
+            <parameter>bearerToken: From .bob/mcp.json configuration</parameter>
+          </parameters>
+        </server>
+      </mcp_servers>
+      <bearer_token_location>
+        .bob/mcp.json -> mcpServers -> techzone-request-mcp -> headers -> Authorization
+        Extract the token after "Bearer "
+      </bearer_token_location>
+    </step>
+
+    <step number="3">
+      <title>Display Environment Status</title>
+      <description>
+        Present a clear summary of the environment status and key details to help
+        the user understand the current state.
+      </description>
+      <information_to_display>
+        <item>Environment name and description</item>
+        <item>Current status (Ready, Provisioning, Failed, etc.)</item>
+        <item>OpenShift version</item>
+        <item>Cluster ID/name</item>
+        <item>Console URL</item>
+        <item>API URL</item>
+        <item>Number of worker nodes and their configuration</item>
+        <item>Validation test results (if available)</item>
+      </information_to_display>
+      <status_interpretation>
+        <status value="Ready">Cluster is operational and ready for debugging</status>
+        <status value="Provisioning">Cluster is still being provisioned, wait before debugging</status>
+        <status value="Failed">Cluster provisioning failed, check logs for errors</status>
+        <status value="Deleted">Cluster has been deleted, cannot debug</status>
+      </status_interpretation>
+    </step>
+
+    <step number="4">
+      <title>Connect to Cluster via OpenShift MCP</title>
+      <description>
+        Use the OpenShift MCP server to establish connection to the cluster.
+        The MCP server handles authentication and cluster access automatically
+        using the kubeconfig from the environment details.
+      </description>
+      <mcp_connection>
+        <description>
+          The OpenShift MCP server provides tools that interact directly with the
+          cluster without requiring local CLI installation or manual kubeconfig setup.
+        </description>
+        <authentication>
+          The MCP server extracts and uses the kubeconfig from the TechZone environment
+          automatically. No manual kubeconfig setup is required.
+        </authentication>
+        <advantages>
+          <advantage>No local CLI tools required</advantage>
+          <advantage>No manual kubeconfig management</advantage>
+          <advantage>Automatic authentication handling</advantage>
+          <advantage>Direct cluster interaction through MCP tools</advantage>
+        </advantages>
+      </mcp_connection>
+      <configuration>
+        <description>
+          Configure the OpenShift MCP server with the kubeconfig from the environment.
+          This is done automatically by passing the kubeconfig content to the MCP server.
+        </description>
+      </configuration>
+    </step>
+
+    <step number="5">
+      <title>Verify Cluster Connection via MCP</title>
+      <description>
+        Use OpenShift MCP tools to verify cluster connectivity and retrieve
+        basic cluster information.
+      </description>
+      <mcp_verification_tools>
+        <tool name="get_cluster_version">
+          <description>Retrieve OpenShift cluster version and update status</description>
+          <use_case>Verify cluster is accessible and check version</use_case>
+          <mcp_call>Use openshift-mcp server tools to get cluster version</mcp_call>
+        </tool>
+        <tool name="list_nodes">
+          <description>List all nodes in the cluster with status</description>
+          <use_case>Check node status and availability</use_case>
+          <mcp_call>Use openshift-mcp server tools to list nodes</mcp_call>
+        </tool>
+        <tool name="get_cluster_operators">
+          <description>List OpenShift cluster operators and their health status</description>
+          <use_case>Verify cluster operators are healthy</use_case>
+          <mcp_call>Use openshift-mcp server tools to get operator status</mcp_call>
+        </tool>
+      </mcp_verification_tools>
+    </step>
+
+    <step number="6">
+      <title>Interactive Debugging Menu with MCP Tools</title>
+      <description>
+        Present an interactive menu of debugging options using OpenShift MCP server tools.
+        All operations are performed through MCP without requiring local CLI tools.
+      </description>
+      <mcp_debugging_options>
+        <option number="1">
+          <name>View Cluster Events</name>
+          <description>See recent cluster events to identify issues</description>
+          <mcp_tool>get_events</mcp_tool>
+          <parameters>
+            <parameter>namespace: Optional namespace filter</parameter>
+            <parameter>limit: Number of events to retrieve</parameter>
+          </parameters>
+          <what_to_look_for>
+            <item>Error or Warning events</item>
+            <item>Failed pod scheduling</item>
+            <item>Image pull errors</item>
+            <item>Resource quota exceeded</item>
+          </what_to_look_for>
+        </option>
+        <option number="2">
+          <name>List Pods in Namespace</name>
+          <description>View all pods in a specific namespace</description>
+          <mcp_tool>list_pods</mcp_tool>
+          <parameters>
+            <parameter>namespace: Target namespace (or all-namespaces)</parameter>
+            <parameter>label_selector: Optional label filter</parameter>
+          </parameters>
+          <common_namespaces>
+            <namespace>default</namespace>
+            <namespace>openshift-*</namespace>
+            <namespace>kube-system</namespace>
+            <namespace>User-created namespaces</namespace>
+          </common_namespaces>
+        </option>
+        <option number="3">
+          <name>View Pod Logs</name>
+          <description>Retrieve logs from a specific pod</description>
+          <mcp_tool>get_pod_logs</mcp_tool>
+          <parameters>
+            <parameter>pod_name: Name of the pod</parameter>
+            <parameter>namespace: Namespace containing the pod</parameter>
+            <parameter>container: Optional container name for multi-container pods</parameter>
+            <parameter>previous: Get logs from previous container instance</parameter>
+            <parameter>tail: Number of lines to retrieve</parameter>
+          </parameters>
+        </option>
+        <option number="4">
+          <name>Describe Resource</name>
+          <description>Get detailed information about a resource</description>
+          <mcp_tool>describe_resource</mcp_tool>
+          <parameters>
+            <parameter>resource_type: Type of resource (pod, deployment, service, etc.)</parameter>
+            <parameter>resource_name: Name of the resource</parameter>
+            <parameter>namespace: Namespace containing the resource</parameter>
+          </parameters>
+          <what_to_look_for>
+            <item>Events section for errors</item>
+            <item>Container status and restart count</item>
+            <item>Resource requests and limits</item>
+            <item>Volume mount issues</item>
+          </what_to_look_for>
+        </option>
+        <option number="5">
+          <name>Check Playbook Jobs</name>
+          <description>View Ansible playbook execution jobs</description>
+          <mcp_tool>list_jobs</mcp_tool>
+          <parameters>
+            <parameter>namespace: Namespace to search for jobs</parameter>
+            <parameter>label_selector: Optional label filter</parameter>
+          </parameters>
+          <common_job_patterns>
+            <pattern>post-deploy-*</pattern>
+            <pattern>pre-destroy-*</pattern>
+            <pattern>ansible-*</pattern>
+          </common_job_patterns>
+        </option>
+        <option number="6">
+          <name>Check ConfigMaps and Secrets</name>
+          <description>View configuration data used by playbooks</description>
+          <mcp_tool>list_configmaps / list_secrets</mcp_tool>
+          <parameters>
+            <parameter>namespace: Namespace to search</parameter>
+          </parameters>
+          <note>Secrets values are base64-encoded and should not be displayed</note>
+        </option>
+        <option number="7">
+          <name>Check Cluster Operators</name>
+          <description>View OpenShift cluster operator status</description>
+          <mcp_tool>get_cluster_operators</mcp_tool>
+          <what_to_look_for>
+            <item>Available=True for all operators</item>
+            <item>Degraded=False for all operators</item>
+            <item>Progressing=False (unless update in progress)</item>
+          </what_to_look_for>
+        </option>
+        <option number="8">
+          <name>Check Node Status</name>
+          <description>View detailed node information and resource usage</description>
+          <mcp_tool>list_nodes / get_node_metrics</mcp_tool>
+          <what_to_look_for>
+            <item>Node Ready status</item>
+            <item>CPU and memory pressure</item>
+            <item>Disk pressure</item>
+            <item>Resource allocation</item>
+          </what_to_look_for>
+        </option>
+        <option number="9">
+          <name>Execute Custom Query</name>
+          <description>Execute a custom resource query</description>
+          <mcp_tool>query_resources</mcp_tool>
+          <parameters>
+            <parameter>resource_type: Type of resource to query</parameter>
+            <parameter>namespace: Optional namespace filter</parameter>
+            <parameter>label_selector: Optional label selector</parameter>
+            <parameter>field_selector: Optional field selector</parameter>
+          </parameters>
+        </option>
+      </mcp_debugging_options>
+      <menu_presentation>
+        Use ask_followup_question to present the menu and get user selection
+      </menu_presentation>
+    </step>
+
+    <step number="7">
+      <title>Execute Debugging Commands via MCP</title>
+      <description>
+        Execute the selected debugging commands using OpenShift MCP server tools
+        and present the results to the user.
+      </description>
+      <mcp_execution>
+        <description>
+          All debugging operations are performed through the OpenShift MCP server.
+          Use use_mcp_tool to call the appropriate OpenShift MCP server tools.
+        </description>
+        <tool_format><![CDATA[
+<use_mcp_tool>
+<server_name>openshift-mcp</server_name>
+<tool_name>[tool_name]</tool_name>
+<arguments>
+{
+  "parameter1": "value1",
+  "parameter2": "value2"
+}
+</arguments>
+</use_mcp_tool>
+        ]]></tool_format>
+      </mcp_execution>
+      <result_interpretation>
+        <guideline>Analyze command output for common issues</guideline>
+        <guideline>Highlight errors, warnings, or unusual patterns</guideline>
+        <guideline>Suggest next steps based on findings</guideline>
+        <guideline>Offer to execute related commands for deeper investigation</guideline>
+      </result_interpretation>
+    </step>
+
+    <step number="8">
+      <title>Offer Follow-Up Actions</title>
+      <description>
+        Based on the debugging results, offer relevant follow-up actions to help
+        the user resolve issues or gather more information.
+      </description>
+      <follow_up_scenarios>
+        <scenario name="pod_failing">
+          <indicators>
+            <indicator>Pod status: CrashLoopBackOff, Error, ImagePullBackOff</indicator>
+            <indicator>High restart count</indicator>
+          </indicators>
+          <suggested_actions>
+            <action>View pod logs to identify error</action>
+            <action>Describe pod to see events</action>
+            <action>Check if image exists and is accessible</action>
+            <action>Verify resource requests/limits</action>
+          </suggested_actions>
+        </scenario>
+        <scenario name="job_failed">
+          <indicators>
+            <indicator>Job status: Failed</indicator>
+            <indicator>Completions: 0/1</indicator>
+          </indicators>
+          <suggested_actions>
+            <action>View job logs</action>
+            <action>Check job pod status</action>
+            <action>Review job configuration</action>
+            <action>Check for resource constraints</action>
+          </suggested_actions>
+        </scenario>
+        <scenario name="node_issues">
+          <indicators>
+            <indicator>Node status: NotReady</indicator>
+            <indicator>Memory or disk pressure</indicator>
+          </indicators>
+          <suggested_actions>
+            <action>Describe node for detailed status</action>
+            <action>Check node resource usage</action>
+            <action>View node events</action>
+            <action>Check cluster operator status</action>
+          </suggested_actions>
+        </scenario>
+        <scenario name="networking_issues">
+          <indicators>
+            <indicator>Service connection failures</indicator>
+            <indicator>DNS resolution errors</indicator>
+          </indicators>
+          <suggested_actions>
+            <action>Check service endpoints</action>
+            <action>Verify network policies</action>
+            <action>Test DNS resolution from pod</action>
+            <action>Check ingress/route configuration</action>
+          </suggested_actions>
+        </scenario>
+      </follow_up_scenarios>
+      <continue_debugging>
+        <option>Return to debugging menu</option>
+        <option>Execute another command</option>
+        <option>Export debugging session results</option>
+        <option>End debugging session</option>
+      </continue_debugging>
+    </step>
+
+    <step number="9">
+      <title>Session Summary</title>
+      <description>
+        Provide a summary of the debugging session.
+      </description>
+      <summary_contents>
+        <item>Commands executed via MCP</item>
+        <item>Key findings</item>
+        <item>Issues identified</item>
+        <item>Recommended next steps</item>
+      </summary_contents>
+      <note>
+        No cleanup is required when using the OpenShift MCP server, as it handles
+        all authentication and connection management internally.
+      </note>
+    </step>
+  </workflow>
+
+  <error_handling>
+    <error name="request_not_found">
+      <symptom>404 error when retrieving request</symptom>
+      <solutions>
+        <solution>Try as environment ID instead</solution>
+        <solution>Verify ID is correct (24 hex characters)</solution>
+        <solution>Check if request has been deleted</solution>
+      </solutions>
+    </error>
+
+    <error name="environment_not_found">
+      <symptom>404 error when retrieving environment</symptom>
+      <solutions>
+        <solution>Verify environment ID is correct</solution>
+        <solution>Check if environment has been deleted</solution>
+        <solution>Try retrieving by request ID instead</solution>
+      </solutions>
+    </error>
+
+    <error name="kubeconfig_not_available">
+      <symptom>No kubeconfig in environment output</symptom>
+      <solutions>
+        <solution>Check if environment is in Ready status</solution>
+        <solution>Wait for provisioning to complete</solution>
+        <solution>Check if platform supports kubeconfig download</solution>
+      </solutions>
+    </error>
+
+    <error name="mcp_server_not_available">
+      <symptom>OpenShift MCP server is not configured or not responding</symptom>
+      <solutions>
+        <solution>Verify openshift-mcp server is configured in .bob/mcp.json</solution>
+        <solution>Check MCP server is running and accessible</solution>
+        <solution>Fall back to traditional CLI-based debugging if needed</solution>
+      </solutions>
+    </error>
+
+    <error name="cluster_not_accessible">
+      <symptom>MCP server cannot connect to cluster</symptom>
+      <solutions>
+        <solution>Verify cluster is in Ready status</solution>
+        <solution>Check network connectivity</solution>
+        <solution>Verify kubeconfig is valid</solution>
+        <solution>Check if VPN is required</solution>
+      </solutions>
+    </error>
+  </error_handling>
+
+  <best_practices>
+    <practice>Always verify environment status before attempting to debug</practice>
+    <practice>Use OpenShift MCP server for seamless cluster interaction</practice>
+    <practice>Provide clear explanations of what each operation does</practice>
+    <practice>Interpret command output and highlight important information</practice>
+    <practice>Offer context-aware follow-up actions based on findings</practice>
+    <practice>Keep the debugging session interactive and guided</practice>
+    <practice>Handle errors gracefully with helpful suggestions</practice>
+    <practice>Leverage MCP tools to avoid local CLI tool dependencies</practice>
+  </best_practices>
+
+  <security_considerations>
+    <consideration priority="critical">
+      <name>Never Display Sensitive Data</name>
+      <description>
+        Do not display secret values, API keys, passwords, or other sensitive
+        information from kubeconfig or cluster resources.
+      </description>
+    </consideration>
+    <consideration priority="high">
+      <name>MCP Server Security</name>
+      <description>
+        The OpenShift MCP server handles authentication securely. Ensure the
+        MCP server configuration in .bob/mcp.json is properly secured.
+      </description>
+    </consideration>
+    <consideration priority="medium">
+      <name>Cluster Access Logging</name>
+      <description>
+        All cluster access through the MCP server should be logged for audit purposes.
+      </description>
+    </consideration>
+  </security_considerations>
+
+  <example_interaction>
+    <title>Complete Debugging Session with MCP</title>
+    <interaction><![CDATA[
+User: "Debug my OpenShift playbook"
+
+Bob: "I'll help you debug your OpenShift playbook using the OpenShift MCP server. What is your TechZone request ID or environment ID?"
+
+User: "69dff2a2df7b5e69455106b0"
+
+Bob: "Let me retrieve your environment details..."
+
+[Executes techzone-get-environment]
+
+Bob: "✓ Environment Retrieved
+
+Status: Ready
+Name: OpenShift Cluster OCPv IBM Cloud
+OCP Version: 4.19
+Cluster ID: itz-5sm6qr
+Worker Nodes: 3 nodes (4 vCPU x 16 GB each)
+
+The cluster is operational. Connecting to cluster via OpenShift MCP server..."
+
+[Connects via OpenShift MCP]
+
+Bob: "✓ Successfully connected to cluster via MCP!
+
+What would you like to debug?
+1. View cluster events
+2. List pods in namespace
+3. View pod logs
+4. Describe resource
+5. Check playbook jobs
+6. Check ConfigMaps and Secrets
+7. Check cluster operators
+8. Check node status
+9. Execute custom query"
+
+User: "Check playbook jobs"
+
+Bob: "Which namespace should I check? (or 'all' for all namespaces)"
+
+User: "default"
+
+[Executes MCP tool: list_jobs with namespace=default]
+
+Bob: "Found 2 jobs in default namespace:
+- post-deploy-mongodb: Failed (0/1 completions)
+- pre-cleanup-backup: Completed (1/1 completions)
+
+The post-deploy-mongodb job failed. Would you like me to:
+1. View the job logs
+2. Describe the job for more details
+3. Check the job pod status"
+
+User: "View the job logs"
+
+[Executes MCP tool: get_pod_logs for job pod]
+
+Bob: "Here are the logs from the failed job:
+
+[Log output showing error]
+
+I can see the job failed due to a connection timeout to MongoDB. This suggests:
+- MongoDB service may not be ready
+- Network policy might be blocking connection
+- MongoDB pod might not be running
+
+Would you like me to:
+1. Check if MongoDB pods are running
+2. View MongoDB pod logs
+3. Check service endpoints
+4. Return to debugging menu"
+    ]]></interaction>
+  </example_interaction>
+
+  <integration_with_mode>
+    <trigger_detection>
+      <description>
+        The mode should automatically activate this skill when users mention
+        debugging OpenShift, troubleshooting clusters, or investigating playbook issues.
+      </description>
+      <keywords>
+        <keyword>debug</keyword>
+        <keyword>troubleshoot</keyword>
+        <keyword>openshift</keyword>
+        <keyword>playbook</keyword>
+        <keyword>cluster</keyword>
+        <keyword>investigate</keyword>
+        <keyword>logs</keyword>
+        <keyword>failed</keyword>
+      </keywords>
+    </trigger_detection>
+    <mode_context>
+      <description>
+        This skill complements the existing IBM TechZone Content Engineer mode
+        by providing operational debugging capabilities for deployed environments
+        using the OpenShift MCP server for seamless cluster interaction.
+      </description>
+    </mode_context>
+  </integration_with_mode>
+</openshift_debugging_skill>
+
+<!-- Made with Bob -->
