@@ -1,8 +1,8 @@
-IBM_MQ_LICENSE=L-SJZL-NMUUCT
-IBM_MQ_VERSION=9.4.5.0-r1
+IBM_MQ_LICENSE=L-VEMB-RABZSN
+IBM_MQ_VERSION=10.0.0.5-r1
 #
-##STORAGE_CLASS=ocs-storagecluster-ceph-rbd
-STORAGE_CLASS=ocs-external-storagecluster-ceph-rbd
+STORAGE_CLASS=ocs-storagecluster-ceph-rbd
+##STORAGE_CLASS=ocs-external-storagecluster-ceph-rbd
 #
 # nativeha CRR properties
 # Add the URL to login to your clusters.   You will need Cluster1 but if you are doing the CRR will need 2 URLs.
