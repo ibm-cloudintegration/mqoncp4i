@@ -2,7 +2,7 @@
 
 ## Working directory for MQ on CP4I PoT
 
-1) First thing to do is to check the **set_priperties.sh**
+1) First thing to do is to check the **set_properties.sh**
 Make sure that you put your primary cluster URL for cluster 1 (xxxxxxxxxxxxxxxxxxxxxxxx).  
 If you are using 2 Primary clusters due to more the 10 students 
 then add the second primary cluster (yyyyyyyyyyyyyyyyy) 
